@@ -1,7 +1,10 @@
 # rancher/kuberlr-kubectl
 A simple way to invoke the correct [kubectl](https://github.com/rancher/kubectl) version on a Rancher managed cluster using [kuberlr](https://github.com/flavio/kuberlr).
 
-Images found at: https://hub.docker.com/r/rancher/kuberlr-kubectl
+Images found at:
+
+- https://hub.docker.com/r/rancher/kuberlr-kubectl
+- https://github.com/rancher/kuberlr-kubectl/pkgs/container/kuberlr-kubectl
 
 ## Details
 This repo produces a Rancher specific version of the `flavio/kuberlr` image.
