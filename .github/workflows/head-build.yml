@@ -1,4 +1,4 @@
-name : Branch head Prerelease Images
+name: Branch head Prerelease Images
 
 on:
   push:
@@ -37,6 +37,7 @@ jobs:
       # write is needed for:
       # - OIDC for cosign's use in ecm-distro-tools/publish-image.
       # - Read vault secrets in rancher-eio/read-vault-secrets.
+      # - Publish image to ghcr.io
       id-token: write
 
     runs-on: ubuntu-latest
@@ -70,9 +71,24 @@ jobs:
       - name: Re-tag the static head image using the rolling tag
         env:
           FULL_IMAGE_URL: ${{ env.PUBLIC_REGISTRY }}/${{ vars.REPO || github.repository_owner }}/${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
+          STATIC_TAG: ${{ needs.prebuild-env.outputs.branch_static_tag }}
+          LATEST_TAG: ${{ needs.prebuild-env.outputs.branch_tag }}
         run: |
           VERSION="1.2.0"
           curl -LO "https://github.com/oras-project/oras/releases/download/v${VERSION}/oras_${VERSION}_linux_amd64.tar.gz"
           mkdir -p oras-install/
           tar -zxf oras_${VERSION}_*.tar.gz -C oras-install/
-          oras-install/oras copy ${{ env.FULL_IMAGE_URL }}:${{ needs.prebuild-env.outputs.branch_static_tag }} ${{ env.FULL_IMAGE_URL }}:${{ needs.prebuild-env.outputs.branch_tag }}
+          oras-install/oras copy ${{ env.FULL_IMAGE_URL }}:${{ env.STATIC_TAG }} ${{ env.FULL_IMAGE_URL }}:${{ env.LATEST_TAG }}
+
+      - name: Re-tag the image tags to ghcr.io/${{ github.repository_owner }}
+        env:
+          FULL_IMAGE_URL: ${{ env.PUBLIC_REGISTRY }}/${{ vars.REPO || github.repository_owner }}/${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
+          STATIC_TAG: ${{ needs.prebuild-env.outputs.branch_static_tag }}
+          LATEST_TAG: ${{ needs.prebuild-env.outputs.branch_tag }}
+          FULL_IMAGE_GHCR_URL: ghcr.io/${{ github.repository_owner }}/${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
+        run: |
+          VERSION="1.2.0"
+          curl -LO "https://github.com/oras-project/oras/releases/download/v${VERSION}/oras_${VERSION}_linux_amd64.tar.gz"
+          mkdir -p oras-install/
+          tar -zxf oras_${VERSION}_*.tar.gz -C oras-install/
+          oras-install/oras copy ${{ env.FULL_IMAGE_URL }}:${{ env.STATIC_TAG }} ${{ env.FULL_IMAGE_GHCR_URL }}:${{ env.STATIC_TAG }},${{ env.LATEST_TAG }}

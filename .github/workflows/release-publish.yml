@@ -57,3 +57,14 @@ jobs:
           public-password: ${{ env.DOCKER_PASSWORD || secrets.DOCKER_PASSWORD }}
 
           push-to-prime: false
+      
+      - name: Re-tag the image to ghcr.io/${{ github.repository_owner }}
+        env:
+          FULL_IMAGE_URL: ${{ env.PUBLIC_REGISTRY }}/${{ vars.REPO || github.repository_owner }}/${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
+          FULL_IMAGE_GHCR_URL: ghcr.io/${{ github.repository_owner }}/${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
+        run: |
+          VERSION="1.2.0"
+          curl -LO "https://github.com/oras-project/oras/releases/download/v${VERSION}/oras_${VERSION}_linux_amd64.tar.gz"
+          mkdir -p oras-install/
+          tar -zxf oras_${VERSION}_*.tar.gz -C oras-install/
+          oras-install/oras copy ${{ env.FULL_IMAGE_URL }}:${{ github.ref_name }} ${{ env.FULL_IMAGE_GHCR_URL }}:${{ github.ref_name }}
