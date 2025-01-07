@@ -18,6 +18,9 @@ on:
 permissions:
   contents: write # Upload artefacts to release.
 
+env:
+  PUBLIC_REGISTRY: docker.io
+
 jobs:
 
   publish-public:
@@ -46,7 +49,7 @@ jobs:
       - name: Build and push all platforms
         uses: rancher/ecm-distro-tools/actions/publish-image@master
         with:
-          image: kuberlr-kubectl
+          image: ${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
           tag: ${{ github.ref_name }}
           platforms: "linux/amd64,linux/arm64"
 
