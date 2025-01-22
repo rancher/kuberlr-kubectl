@@ -18,7 +18,7 @@
         "KUBECTL\\d+_VERSION.*\\=\\s*(?<currentValue>.*?)\\n"
       ],
       "depNameTemplate": "kubernetes/kubernetes",
-      "datasourceTemplate": "github-releases"
+      "datasourceTemplate": "github-tags"
     }
   ],
   "packageRules": [
