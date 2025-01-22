@@ -12,8 +12,6 @@
     {
       "customType": "regex",
       "fileMatch": [
-        "(^|/|\\.)Dockerfile$",
-        "(^|/)Dockerfile[^/]*$",
         "hack/make/deps.mk"
       ],
       "matchStrings": [
@@ -28,7 +26,8 @@
       "matchBaseBranches": ["renovate-test"],
       "matchDepNames": [
         "kubernetes/kubernetes"
-      ]
+      ],
+      "allowedVersions": ">=1.29.0 <1.33.0"
     }
   ]
 }
