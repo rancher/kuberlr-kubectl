@@ -8,6 +8,21 @@
     "renovate-test"
   ],
   "prHourlyLimit": 2,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "(^|/|\\.)Dockerfile$",
+        "(^|/)Dockerfile[^/]*$",
+        "hack/make/deps.mk"
+      ],
+      "matchStrings": [
+        "KUBECTL(?<index>\\d+)_VERSION.*\\=\\s*(?<currentValue>.*?)\\n"
+      ],
+      "depNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases"
+    }
+  ],
   "packageRules": [
     {
       "matchBaseBranches": ["renovate-test"],
