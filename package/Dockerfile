@@ -28,7 +28,7 @@ RUN sed -i 's/AllowDownload = true/AllowDownload = false/' /chroot/home/kuberlr/
 
 WORKDIR /tmp
 
-ARG KUBECTL_VERSION_INFO
+ARG KUBECTL_INFO_LIST
 
 SHELL ["/bin/bash", "-c"]
 RUN set -fx; versions=($KUBECTL_VERSION_INFO); \

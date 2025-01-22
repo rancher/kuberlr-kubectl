@@ -8,20 +8,14 @@
     "renovate-test"
   ],
   "prHourlyLimit": 2,
-  "customManagers": [
-    {
-      "customType": "regex",
-      "fileMatch": [
-        "hack/make/deps.mk"
-      ],
-      "matchStrings": [
-        "KUBECTL\\d+_VERSION.*\\=\\s*(?<currentValue>.*?)\\n"
-      ],
-      "depNameTemplate": "kubernetes/kubernetes",
-      "datasourceTemplate": "github-tags"
-    }
-  ],
   "packageRules": [
+    {
+      "groupName": "Kubectl Bumps",
+      "groupSlug": "kubectl-deps",
+      "matchDepNames": [
+        "kubernetes/kubernetes"
+      ]
+    },
     {
       "matchBaseBranches": ["renovate-test"],
       "matchDepNames": [
