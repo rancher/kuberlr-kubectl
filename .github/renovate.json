@@ -17,7 +17,7 @@
         "hack/make/deps.mk"
       ],
       "matchStrings": [
-        "KUBECTL(?<index>\\d+)_VERSION.*\\=\\s*(?<currentValue>.*?)\\n"
+        "KUBECTL(\\d+)_VERSION.*\\=\\s*(?<currentValue>.*?)\\n"
       ],
       "depNameTemplate": "kubernetes/kubernetes",
       "datasourceTemplate": "github-releases"
