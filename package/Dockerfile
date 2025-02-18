@@ -1,5 +1,5 @@
 ARG BCI_VERSION=15.6
-FROM ghcr.io/flavio/kuberlr:v0.5.2 AS kuberlr
+FROM ghcr.io/flavio/kuberlr:v0.5.3 AS kuberlr
 FROM registry.suse.com/bci/bci-busybox:${BCI_VERSION} AS final
 FROM registry.suse.com/bci/bci-base:${BCI_VERSION} AS zypper
 
