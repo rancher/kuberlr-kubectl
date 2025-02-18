@@ -23,7 +23,7 @@ verifyKuberlrKubectl() {
       # Pull and extract files
       CONTAINER_ID=$(docker create --platform linux/$ARCH "$IMAGE")
       docker cp "$CONTAINER_ID:/bin/kuberlr" "$ARCH_DIR/kuberlr" 2>&1 > /dev/null || echo "kuberlr not found in $IMAGE for $ARCH"
-      KUBECTL_LIST=$(docker run --rm --entrypoint sh rancher/kuberlr-kubectl:v4.0.1 -c "ls /usr/bin | grep kube")
+      KUBECTL_LIST=$(docker run --rm --entrypoint sh "$IMAGE" -c "ls /usr/bin | grep kube")
       for KUBECTL_VER in $KUBECTL_LIST; do
         docker cp "$CONTAINER_ID:/usr/bin/$KUBECTL_VER" "$ARCH_DIR/$KUBECTL_VER" 2>&1 > /dev/null || echo "kubectl ($KUBECTL_VER) not found in $IMAGE for $ARCH"
       done
@@ -100,5 +100,6 @@ else
   verifyKuberlrKubectl;
 fi
 
+rm -rf "$WORKDIR"
 
-echo "All architectures processed. Check $WORKDIR for results."
+echo "All architectures processed."
