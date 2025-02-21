@@ -1,12 +1,12 @@
-KUBECTL_VERSION1 := v1.29.12
+KUBECTL_VERSION1 := v1.31.6
 KUBECTL1_SUM_arm64 ?= $(shell curl -L "https://dl.k8s.io/release/$(KUBECTL_VERSION1)/bin/linux/arm64/kubectl.sha256")
 KUBECTL1_SUM_amd64 ?= $(shell curl -L "https://dl.k8s.io/release/$(KUBECTL_VERSION1)/bin/linux/amd64/kubectl.sha256")
 
-KUBECTL_VERSION2 := v1.30.8
+KUBECTL_VERSION2 := v1.31.6
 KUBECTL2_SUM_arm64 ?= $(shell curl -L "https://dl.k8s.io/release/$(KUBECTL_VERSION2)/bin/linux/arm64/kubectl.sha256")
 KUBECTL2_SUM_amd64 ?= $(shell curl -L "https://dl.k8s.io/release/$(KUBECTL_VERSION2)/bin/linux/amd64/kubectl.sha256")
 
-KUBECTL_VERSION3 := v1.31.4
+KUBECTL_VERSION3 := v1.31.6
 KUBECTL3_SUM_arm64 ?= $(shell curl -L "https://dl.k8s.io/release/$(KUBECTL_VERSION3)/bin/linux/arm64/kubectl.sha256")
 KUBECTL3_SUM_amd64 ?= $(shell curl -L "https://dl.k8s.io/release/$(KUBECTL_VERSION3)/bin/linux/amd64/kubectl.sha256")
 
