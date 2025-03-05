@@ -10,7 +10,7 @@ KUBECTL3_VERSION := v1.30.8
 KUBECTL3_SUM_arm64 ?= $(shell curl -L "https://dl.k8s.io/release/$(KUBECTL3_VERSION)/bin/linux/arm64/kubectl.sha256")
 KUBECTL3_SUM_amd64 ?= $(shell curl -L "https://dl.k8s.io/release/$(KUBECTL3_VERSION)/bin/linux/amd64/kubectl.sha256")
 
-KUBECTL4_VERSION := v1.31.4
+KUBECTL4_VERSION := v1.31.6
 KUBECTL4_SUM_arm64 ?= $(shell curl -L "https://dl.k8s.io/release/$(KUBECTL4_VERSION)/bin/linux/arm64/kubectl.sha256")
 KUBECTL4_SUM_amd64 ?= $(shell curl -L "https://dl.k8s.io/release/$(KUBECTL4_VERSION)/bin/linux/amd64/kubectl.sha256")
 
