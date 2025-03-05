@@ -1,4 +1,4 @@
-KUBECTL1_VERSION := v1.30.8
+KUBECTL1_VERSION := v1.30.10
 KUBECTL1_SUM_arm64 ?= $(shell curl -L "https://dl.k8s.io/release/$(KUBECTL1_VERSION)/bin/linux/arm64/kubectl.sha256")
 KUBECTL1_SUM_amd64 ?= $(shell curl -L "https://dl.k8s.io/release/$(KUBECTL1_VERSION)/bin/linux/amd64/kubectl.sha256")
 
