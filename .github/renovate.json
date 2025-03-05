@@ -4,16 +4,33 @@
   ],
   "baseBranches": [
     "main",
-    "/^release\\/v[0-9]+.x/",
-    "renovate-test"
+    "/^release\\/v[0-9]+.x/"
   ],
-  "prHourlyLimit": 2,
+  "prHourlyLimit": 12,
   "packageRules": [
     {
-      "matchBaseBranches": ["renovate-test"],
-      "matchDepNames": [
-        "kubernetes/kubernetes"
-      ]
+      "matchDepNames": ["kubernetes/kubernetes"],
+      "separateMinorPatch": true,
+      "allowedVersions": ">=1.28.0"
+    },
+    {
+      "description": "Disable major and minor updates",
+      "matchDepNames": ["kubernetes/kubernetes"],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "deps.mk$"
+      ],
+      "matchStrings": [
+        "KUBECTL\\d_VERSION :=\\s(?<currentValue>.*?)\\n"
+      ],
+      "depNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases"
     }
   ]
 }
