@@ -3,10 +3,9 @@
     "github>rancher/renovate-config#release"
   ],
   "baseBranches": [
-    "main",
-    "/^release\\/v[0-9]+.x/"
+    "renovate-test"
   ],
-  "prHourlyLimit": 12,
+  "prHourlyLimit": 24,
   "packageRules": [
     {
       "description": "Using allowedVersions ensures that the upstream range does not block patch bumps.",
@@ -32,6 +31,13 @@
       "groupSlug": "docker-bumps",
       "matchManagers": [
         "dockerfile"
+      ]
+    },
+    {
+      "groupName": "Kubectl Dep Versions",
+      "groupSlug": "kubectl-bumps",
+      "matchDepNames": [
+        "kubernetes/kubernetes"
       ]
     }
   ],
