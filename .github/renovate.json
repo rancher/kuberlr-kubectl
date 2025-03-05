@@ -5,7 +5,7 @@
   "baseBranches": [
     "renovate-test"
   ],
-  "prHourlyLimit": 12,
+  "prHourlyLimit": 24,
   "packageRules": [
     {
       "description": "Using allowedVersions ensures that the upstream range does not block patch bumps.",
