@@ -4,7 +4,8 @@
   ],
   "baseBranches": [
     "main",
-    "/^release\\/v[0-9]+.x/"
+    "/^release\\/v[0-9]+.x/",
+    "renovate-test"
   ],
   "prHourlyLimit": 12,
   "packageRules": [
