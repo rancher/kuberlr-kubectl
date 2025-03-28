@@ -16,16 +16,16 @@ This repo produces a Rancher specific version of the `flavio/kuberlr` image.
 ## Branches, Releases, and Rancher
 | Branch              | Release Tag   | Rancher Tag (Branch)   |
 |---------------------|---------------|------------------------|
-| main (release/v4.x) | head (v4.Y.Z) | 2.11.Z (main)          |
+| main (release/v5.x) | head (v5.Y.Z) | 2.12.Z (main)          |
+| release/v4.x        | v4.Y.Z        | 2.11.Z (release/v2.11) |
 | release/v3.x        | v3.Y.Z        | 2.10.Z (release/v2.10) |
 | release/v2.x        | v2.Y.Z        | 2.9.Z (release/v2.9)   |
-| release/v1.x        | v1.Y.Z        | 2.8.Z (release/v2.8)   |
 
 ### Notes:
 - Each minor Rancher release will get a `rancher/kuberlr-kubectl` branch:
   - Each branch will get an image tag major to match it.
   - This gives us full "Y" and "Z" control on versioning the component to target Rancher minors.
-  - E.x. Rancher 2.8.x releases will get varying versions of 1.Y.Z
+  - E.x. Rancher 2.10.x releases will get varying versions of 3.Y.Z
 
 ### Migration
 
@@ -50,18 +50,20 @@ gantt
   axisFormat 1.%S
   tickInterval 1second
   section Rancher
-    2.8.X           :25,28
+    2.11.X           :30,32
+    2.10.X           :28,31
     2.9.X           :27,30
   section kuberlr-kubectl image
-    1.Y.Z (for Rancher 2.8)   :25,28
-    2.Y.Z (for Rancher 2.9)   :27,30
+    4.Y.Z   :30,32
+    3.Y.Z   :28,31
+    2.Y.Z   :27,30
   section Kubectl Drift
-    1.25              :24,26
-    1.26              :25,27
     1.27              :26,28
     1.28              :27,29
     1.29              :28,30
     1.30              :29,31
+    1.31              :30,32
+    1.32              :31,33
 ```
 
 > Note: Over-time, as new `kuberlr` binaries are released we can still bump the Y or Z of each `rancher/kuberlr-kubectl` release to update all supported Rancher releases.
