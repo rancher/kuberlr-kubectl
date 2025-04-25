@@ -1,0 +1,7 @@
+global:
+  cattle:
+    systemDefaultRegistry: ""
+  kubectl:
+    repository: rancher/kuberlr-kubectl
+    tag: v4.0.2
+    pullPolicy: "IfNotPresent"
