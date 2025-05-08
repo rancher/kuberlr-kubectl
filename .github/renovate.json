@@ -10,14 +10,21 @@
   "packageRules": [
     {
       "description": "Using allowedVersions ensures that the upstream range does not block patch bumps.",
-      "matchDepNames": ["kubernetes/kubernetes"],
+      "matchDepNames": [
+        "kubernetes/kubernetes"
+      ],
       "separateMinorPatch": true,
       "allowedVersions": ">=1.28.0"
     },
     {
       "description": "Disable major and minor updates",
-      "matchDepNames": ["kubernetes/kubernetes"],
-      "matchUpdateTypes": ["major", "minor"],
+      "matchDepNames": [
+        "kubernetes/kubernetes"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ],
       "enabled": false
     },
     {
@@ -45,8 +52,8 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": [
-        "deps.mk$"
+      "managerFilePatterns": [
+        "/deps.mk$/"
       ],
       "matchStrings": [
         "KUBECTL\\d_VERSION :=\\s(?<currentValue>.*?)\\n"
