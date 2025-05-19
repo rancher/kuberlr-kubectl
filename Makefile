@@ -56,3 +56,9 @@ ifdef DIRTY
 	@git --no-pager diff
 	@exit 1
 endif
+
+TARGETS := $(shell ls scripts|grep -ve "^util-\|entry\|^pull-scripts")
+
+# Default behavior for targets without dapper
+$(TARGETS):
+	./scripts/$@
