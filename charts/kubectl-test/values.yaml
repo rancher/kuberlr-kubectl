@@ -5,3 +5,7 @@ global:
     repository: rancher/kuberlr-kubectl
     tag: v4.0.2
     pullPolicy: "IfNotPresent"
+    # As long as kubectl image is using `rancher/kuberlr-kubectl` it can use kuberlr features.
+    # kuberlrAllowDownload is disabled by default for most compatibility with air-gaps
+    # When enabled it will allow kuberlr to download a compatible `kubectl` with the target cluster.
+    # kuberlrAllowDownload: false
