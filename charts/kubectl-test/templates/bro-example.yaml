@@ -71,3 +71,8 @@ spec:
           image: {{ include "system_default_registry" . }}{{ .Values.global.kubectl.repository }}:{{ .Values.global.kubectl.tag }}
           imagePullPolicy: IfNotPresent
           command: ["kubectl", "-n", {{ .Release.Namespace | quote }}, "patch", "serviceaccount", "default", "-p", "{\"automountServiceAccountToken\": false}"]
+          {{- if and .Values.global.kubectl (hasKey .Values.global.kubectl "kuberlrAllowDownload") }}
+          env:
+            - name: KUBERLR_ALLOWDOWNLOAD
+              value: {{ default .Values.global.kubectl.kuberlrAllowDownload false }}
+          {{- end }}
