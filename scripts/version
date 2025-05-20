@@ -22,7 +22,7 @@ fi
 
 SUFFIX="-${ARCH}"
 
-TAG=${TAG:-${VERSION}}
+TAG=${TAG:-${BRANCH_TAG:-${VERSION}}}
 REPO=${REPO:-rancher}
 
 HELM_IMAGE_TAG=${HELM_IMAGE_TAG:-${TAG}}
