@@ -36,13 +36,14 @@ build-image: buildx-machine ## build (and load) the container image targeting th
 	@echo "Built $(FULL_IMAGE_TAG)"
 
 build-validate: buildx-machine ## build (and load) the container image targeting the current platform.
+	mkdir -p ci
 	$(IMAGE_BUILDER) build -f package/Dockerfile \
 		--builder $(MACHINE) $(IMAGE_ARGS) \
 		--build-arg VERSION=$(VERSION) \
 		--platform=$(TARGET_PLATFORMS) \
-		--output type=oci,dest=multiarch-image.oci \
-		-t "$(FULL_IMAGE_TAG)" $(BUILD_ACTION) .
-	@echo "Built $(FULL_IMAGE_TAG) multi-arch image saved to multiarch-image.oci"
+		--output type=oci,dest=ci/multiarch-image.oci \
+		-t "$(FULL_IMAGE_TAG)" .
+	@echo "Built $(FULL_IMAGE_TAG) multi-arch image saved to ci/multiarch-image.oci"
 
 push-image: validate buildx-machine ## build the container image targeting all platforms defined by TARGET_PLATFORMS and push to a registry.
 	$(IMAGE_BUILDER) build -f package/Dockerfile \

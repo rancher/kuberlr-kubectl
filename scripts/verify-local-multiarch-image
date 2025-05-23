@@ -4,8 +4,8 @@ set -e
 cd "$(dirname "$0")/.."
 
 # Init var config
-OCI_ARCHIVE_PATH="./multiarch-image.oci"
 CI_ROOT="./ci"
+OCI_ARCHIVE_PATH=${OCI_ARCHIVE_PATH:-"$CI_ROOT/multiarch-image.oci"}
 CI_LOG_FILE="$CI_ROOT/image-ci-$(date +'%Y%m%d-%H%M%S').log"
 TARGET_FILES=(
   "/bin/kuberlr"
