@@ -4,6 +4,7 @@
 /bin
 /dist
 /build
+/ci
 *.swp
 .idea
 versions.txt
