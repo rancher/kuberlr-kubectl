@@ -3,7 +3,6 @@ FROM ghcr.io/flavio/kuberlr:v0.6.0 AS kuberlr
 FROM registry.suse.com/bci/bci-busybox:${BCI_VERSION} AS final
 FROM registry.suse.com/bci/bci-base:${BCI_VERSION} AS zypper
 
-ARG TARGETPLATFORM
 ARG TARGETARCH
 
 # Creates the based dir for the target image, and hydrates it with the
