@@ -3,8 +3,11 @@
 /.trash-cache
 /bin
 /dist
+/build
+/ci
 *.swp
 .idea
 versions.txt
 new-versions.txt
 /image_arch_test
+*.oci
