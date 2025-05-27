@@ -39,6 +39,12 @@ if echo "$TAG" | grep -q dirty; then
 fi
 IMAGE=${IMAGE:-"$REPO/kuberlr-kubectl:${TAG}"}
 
+if [[ "$1" == "--short" && -n "$2" ]]; then
+  var_name="$2"
+  echo "${!var_name}"
+  exit 0
+fi
+
 function print_version_debug() {
     echo "DIRTY: $DIRTY"
     echo "SUFFIX: $SUFFIX";
