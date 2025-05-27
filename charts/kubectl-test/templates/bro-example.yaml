@@ -3,7 +3,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ include "kubectlTest.fullname" . }}-patch-sa
-  namespace: {{ template "kubectlTest.namespace" . }}
+  namespace: {{ include "kubectlTest.namespace" . }}
   labels: {{ include "kubectlTest.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": post-install, post-upgrade
@@ -69,7 +69,7 @@ spec:
       containers:
         - name: {{ include "kubectlTest.fullname" . }}-patch-sa
           image: {{ template "kubectl.image" . }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ .Values.global.kubectl.pullPolicy | default "Always" }}
           command: ["kubectl", "-n", {{ .Release.Namespace | quote }}, "patch", "serviceaccount", "default", "-p", "{\"automountServiceAccountToken\": false}"]
           {{- if and .Values.global.kubectl (hasKey .Values.global.kubectl "kuberlrAllowDownload") }}
           env:

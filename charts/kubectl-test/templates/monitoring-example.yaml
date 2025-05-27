@@ -1,3 +1,14 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "kubectlTest.fullname" . }}-upgrade
+  namespace: {{ include "kubectlTest.namespace" . }}
+  labels: {{ include "kubectlTest.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install, post-upgrade
+    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -39,7 +50,7 @@ spec:
       containers:
         - name: run-scripts
           image: {{ template "kubectl.image" . }}
-          imagePullPolicy: {{ $.Values.global.kubectl.pullPolicy | default "Always" }}
+          imagePullPolicy: {{ .Values.global.kubectl.pullPolicy | default "Always" }}
           {{- if and .Values.global.kubectl (hasKey .Values.global.kubectl "kuberlrAllowDownload") }}
           env:
             - name: KUBERLR_ALLOWDOWNLOAD
@@ -49,6 +60,7 @@ spec:
             - /bin/sh
             - -c
             - >
+              sleep 10;
               for s in $(find /etc/scripts -type f); do
                 echo "Running $s...";
                 cat $s | bash
