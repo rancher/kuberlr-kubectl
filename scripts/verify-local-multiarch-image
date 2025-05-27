@@ -1,0 +1,267 @@
+#!/usr/bin/env bash
+set -e
+
+cd "$(dirname "$0")/.."
+
+# Init var config
+CI_ROOT="./ci"
+OCI_ARCHIVE_PATH=${OCI_ARCHIVE_PATH:-"$CI_ROOT/multiarch-image.oci"}
+CI_LOG_FILE="$CI_ROOT/image-ci-$(date +'%Y%m%d-%H%M%S').log"
+TARGET_FILES=(
+  "/bin/kuberlr"
+  "/usr/bin/kube*"
+)
+OUTPUT_DIR="$CI_ROOT/files"
+
+# Create CI log file
+mkdir -p "$CI_ROOT"
+touch "$CI_LOG_FILE"
+
+log() {
+    local msg="$1"
+    echo -e "$msg"
+    echo -e "$(date +'%F %T') $msg" >> "$CI_LOG_FILE"
+}
+
+# Init var here, but set it later so we can use it in the trap function
+TEMP_DIR=""
+
+cleanup() {
+  pwd
+    if [[ -n "$TEMP_DIR" && -d "$TEMP_DIR" ]]; then
+        log "Cleaning up temporary directory: $TEMP_DIR"
+        rm -rf "$TEMP_DIR"
+    fi
+}
+trap cleanup EXIT
+
+# Function to emulate 'skopeo inspect --raw oci-archive:multiarch-image.oci'
+# Output is a JSON array of simplified manifest objects.
+function emulate_skopeo_inspect_raw() {
+    local oci_path="$1"
+    local index_json="$oci_path/index.json"
+
+    if [[ ! -d "$oci_path" ]]; then
+        echo "Error: OCI image path '$oci_path' is not a directory." >&2
+        return 1
+    fi
+
+    if [[ ! -f "$index_json" ]]; then
+        echo "Error: '$index_json' not found. Is this a valid OCI image directory?" >&2
+        return 1
+    fi
+
+    local manifest_digest
+    manifest_digest=$(jq -r '.manifests[] | select(.mediaType == "application/vnd.oci.image.index.v1+json") | .digest' "$index_json")
+
+    local manifest_digest_path="$oci_path/blobs/$(echo "$manifest_digest" | sed 's/:/\//')"
+
+    local manifests_json
+    manifests_json=$(jq -c '.manifests[]' "$manifest_digest_path")
+
+    local output_array="["
+    local first_manifest=true
+
+    while IFS= read -r manifest_entry; do
+        local digest=$(echo "$manifest_entry" | jq -r '.digest')
+        local mediaType=$(echo "$manifest_entry" | jq -r '.mediaType')
+        local architecture=$(echo "$manifest_entry" | jq -r '.platform.architecture')
+        local os=$(echo "$manifest_entry" | jq -r '.platform.os')
+
+        # We are only interested in OCI image manifests
+        if [[ "$mediaType" != "application/vnd.oci.image.manifest.v1+json" ]]; then
+            continue
+        fi
+
+        # Filter out "unknown" OS platforms
+        if [[ "$os" == "unknown" || "$architecture" == "unknown"  ]]; then
+            continue
+        fi
+
+        local manifest_blob_path="$oci_path/blobs/$(echo "$digest" | sed 's/:/\//')"
+
+        if [[ ! -f "$manifest_blob_path" ]]; then
+            echo "Warning: Manifest blob '$manifest_blob_path' not found for digest '$digest'." >&2
+            continue
+        fi
+
+        local manifest_content
+        manifest_content=$(cat "$manifest_blob_path")
+
+        local layers=$(echo "$manifest_content" | jq -c '.layers')
+
+        local simplified_manifest="{
+            \"digest\": \"$(echo "$digest" | cut -d':' -f2)\",
+            \"platform\": {
+                \"architecture\": \"$architecture\",
+                \"os\": \"$os\"
+            },
+            \"layers\": $layers
+        }"
+
+        if [[ "$first_manifest" == true ]]; then
+            output_array+="$simplified_manifest"
+            first_manifest=false
+        else
+            output_array+=",$simplified_manifest"
+        fi
+
+    done <<< "$manifests_json"
+
+    output_array+="]"
+    echo "$output_array" | jq . # Pretty print the JSON
+}
+
+# Map from OCI platform to expected binary architecture identifier
+declare -A EXPECTED_BIN_ARCH=(
+  ["linux/amd64"]="x86-64"
+  ["linux/386"]="i386"
+  ["linux/arm64"]="ARM aarch64"
+  ["linux/arm/v7"]="ARM"
+  ["linux/mips"]="MIPS"
+  ["linux/mips64"]="MIPS64"
+  ["linux/riscv64"]="RISC-V"
+  ["linux/ppc64le"]="PowerPC64"
+  ["linux/s390x"]="s390x"
+)
+
+# Verify that a binary matches the expected architecture for the source OCI platform.
+check_file_architecture() {
+    local binary_path="$1"
+    local expected_os="$2"
+    local expected_arch="$3"
+    local oci_platform="$expected_os/$expected_arch"
+
+    expected_arch="${EXPECTED_BIN_ARCH["$oci_platform"]}"
+    if [[ -z "$expected_arch" ]]; then
+        log "❌ Unsupported OCI platform: $oci_platform"
+        return 1
+    fi
+
+    local arch_info
+    arch_info=$(file --brief "$binary_path")
+
+    if [[ "$arch_info" == *"$expected_arch"* ]]; then
+        log "✅ Match: $binary_path is $expected_arch"
+        return 0
+    else
+        log "❌ Mismatch: Expected '$expected_arch', got: $arch_info"
+        return 1
+    fi
+}
+
+## Primary script logic ##
+log "🎬 Starting OCI multi-arch validation pipeline"
+TEMP_DIR=$(mktemp -d "$CI_ROOT/.tmp-XXXXXX")
+TEMP_DIR_FULL=$(realpath "$TEMP_DIR")
+log "Temporary directory: $TEMP_DIR_FULL"
+
+# Verify the OCI archive exists
+if [[ ! -f "$OCI_ARCHIVE_PATH" ]]; then
+    log "❌ OCI archive '$OCI_ARCHIVE_PATH' not found."
+    exit 1
+fi
+
+log "📦 Extracting OCI archive to '$TEMP_DIR_FULL'"
+OCI_IMAGE_PATH="$TEMP_DIR_FULL/oci-image"
+mkdir -p "$OCI_IMAGE_PATH"
+tar -xf "$OCI_ARCHIVE_PATH" -C "$OCI_IMAGE_PATH" || {
+    log "❌ Failed to extract OCI archive."
+    exit 1
+}
+
+# Determine the root of the extracted OCI image layout
+# An OCI archive usually extracts its contents directly into the target dir,
+# so the root of the OCI layout should be OCI_IMAGE_PATH itself.
+# We can verify by checking for oci-layout and index.json
+if [[ -f "$OCI_IMAGE_PATH/oci-layout" && -f "$OCI_IMAGE_PATH/index.json" ]]; then
+    OCI_IMAGE_ROOT="$OCI_IMAGE_PATH"
+else
+    FIRST_SUBDIR=$(find "$OCI_IMAGE_PATH" -maxdepth 1 -mindepth 1 -type d -print -quit)
+    if [[ -n "$FIRST_SUBDIR" && -f "$FIRST_SUBDIR/oci-layout" && -f "$FIRST_SUBDIR/index.json" ]]; then
+        OCI_IMAGE_ROOT="$FIRST_SUBDIR"
+    else
+        log "❌ Could not determine the root of the OCI image."
+        exit 1
+    fi
+fi
+log "📁 OCI image layout root: $OCI_IMAGE_ROOT"
+
+mkdir -p "$OUTPUT_DIR" || { echo "Error: Failed to create output directory '$OUTPUT_DIR'."; exit 1; }
+
+log "🔍 Inspecting OCI image manifests..."
+IMAGE_MANIFESTS=$(emulate_skopeo_inspect_raw "$OCI_IMAGE_ROOT")
+[[ $? -ne 0 ]] && { log "❌ Failed to inspect manifests"; exit 1; }
+
+if [[ $(echo "$IMAGE_MANIFESTS" | jq 'length') -eq 0 ]]; then
+    log "⚠️ No valid manifests found. Exiting."
+    exit 0
+fi
+
+echo "Manifests found:"
+echo "$IMAGE_MANIFESTS" | jq .
+
+log "--- Processing each architecture manifest ---"
+
+echo "$IMAGE_MANIFESTS" | jq -c '.[]' | while IFS= read -r manifest_entry; do
+    selected_digest=$(echo "$manifest_entry" | jq -r '.digest')
+    selected_architecture=$(echo "$manifest_entry" | jq -r '.platform.architecture')
+    selected_os=$(echo "$manifest_entry" | jq -r '.platform.os')
+    selected_layers=$(echo "$manifest_entry" | jq -c '.layers[]')
+    selected_layer_id=$selected_os-$selected_architecture
+
+    LAYER_EXTRACT_TEMP_DIR=$(mktemp -d "$TEMP_DIR/layer_${selected_layer_id}_XXXXXX")
+    current_output_dir="$OUTPUT_DIR/$selected_layer_id"
+    mkdir -p "$current_output_dir"
+
+    log "🔧 Processing $selected_os/$selected_architecture"
+
+    all_target_files_found_for_manifest=true
+
+    while IFS= read -r layer_entry; do
+        layer_digest=$(echo "$layer_entry" | jq -r '.digest')
+        layer_blob_path="$OCI_IMAGE_ROOT/blobs/$(echo "$layer_digest" | sed 's/:/\//')"
+
+        [[ ! -f "$layer_blob_path" ]] && {
+            log "⚠️ Missing layer blob: $layer_digest"
+            continue
+        }
+
+        log "➡️  Extracting layer: $layer_digest"
+        gunzip -c "$layer_blob_path" | tar -xf - -C "$LAYER_EXTRACT_TEMP_DIR" || {
+            log "❌ Failed to extract layer: $layer_digest"
+            all_target_files_found_for_manifest=false
+            continue
+        }
+    done <<< "$selected_layers"
+
+    for target_file_path in "${TARGET_FILES[@]}"; do
+        matched_files=$(find "$LAYER_EXTRACT_TEMP_DIR" -type f -path "$LAYER_EXTRACT_TEMP_DIR/${target_file_path#/}")
+
+        if [[ -z "$matched_files" ]]; then
+            log "❌ Target not found: $target_file_path in $selected_os/$selected_architecture"
+            all_target_files_found_for_manifest=false
+        else
+            while IFS= read -r found_file_path; do
+                dest_file_name=$(basename "$found_file_path")
+                cp "$found_file_path" "$current_output_dir/$dest_file_name" || {
+                    log "❌ Failed to copy $found_file_path"
+                    all_target_files_found_for_manifest=false
+                    continue
+                }
+                check_file_architecture "$current_output_dir/$dest_file_name" "$selected_os" "$selected_architecture" || {
+                    all_target_files_found_for_manifest=false
+                }
+            done <<< "$matched_files"
+        fi
+    done
+
+    if [[ "$all_target_files_found_for_manifest" == true ]]; then
+        log "✅ All target files verified for $selected_os/$selected_architecture"
+    else
+        log "⚠️ Incomplete or mismatched files in $selected_os/$selected_architecture"
+    fi
+done
+
+log "🏁 Finished processing all manifests."
+log "📝 CI log saved to: $CI_LOG_FILE"

@@ -14,11 +14,20 @@ IMAGE_NAME = $(REPO)/$(IMAGE)
 FULL_IMAGE_TAG = $(IMAGE_NAME):$(TAG)
 BUILD_ACTION = --load
 
+TARGETS := $(shell ls scripts|grep -ve "^util-\|entry\|^pull-scripts")
+
+# Default behavior for targets without dapper
+$(TARGETS):
+	./scripts/$@
+
+.PHONY: $(TARGETS)
+
 .DEFAULT_GOAL := ci
-ci: validate ## run the targets needed to validate a PR in CI.
 
 clean: ## clean up project.
 	rm -rf build
+	rm -rf multiarch-image.oci
+	rm -rf ./ci
 
 build-image: buildx-machine ## build (and load) the container image targeting the current platform.
 	$(IMAGE_BUILDER) build -f package/Dockerfile \
@@ -26,7 +35,17 @@ build-image: buildx-machine ## build (and load) the container image targeting th
 		--build-arg VERSION=$(VERSION) --platform=$(TARGET_PLATFORMS) -t "$(FULL_IMAGE_TAG)" $(BUILD_ACTION) .
 	@echo "Built $(FULL_IMAGE_TAG)"
 
-push-image: buildx-machine ## build the container image targeting all platforms defined by TARGET_PLATFORMS and push to a registry.
+build-validate: buildx-machine ## build (and load) the container image targeting the current platform.
+	mkdir -p ci
+	$(IMAGE_BUILDER) build -f package/Dockerfile \
+		--builder $(MACHINE) $(IMAGE_ARGS) \
+		--build-arg VERSION=$(VERSION) \
+		--platform=$(TARGET_PLATFORMS) \
+		--output type=oci,dest=ci/multiarch-image.oci \
+		-t "$(FULL_IMAGE_TAG)" .
+	@echo "Built $(FULL_IMAGE_TAG) multi-arch image saved to ci/multiarch-image.oci"
+
+push-image: validate buildx-machine ## build the container image targeting all platforms defined by TARGET_PLATFORMS and push to a registry.
 	$(IMAGE_BUILDER) build -f package/Dockerfile \
 		--builder $(MACHINE) $(IMAGE_ARGS) $(IID_FILE_FLAG) $(BUILDX_ARGS) \
 		--build-arg VERSION=$(VERSION) --platform=$(TARGET_PLATFORMS) -t "$(FULL_IMAGE_TAG)" --push .

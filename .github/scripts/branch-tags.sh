@@ -40,10 +40,18 @@ elif [[ "$ref" == refs/heads/release/* ]]; then
   prevTag=$(getPreviousTag "${version}-head-")
 else
   echo "Unsupported branch pattern. Expected 'main' or 'release/*'."
-  exit 1
+  # This exits with status 0 to ensure it doesn't stop CI in GHA
+  # Outside of `main` or `release/*` branches it will use other tags
+  exit 0
 fi
 
 # Output the results
-echo "branch_tag=${branchTag}"
-echo "branch_static_tag=${branchStaticTag}"
-echo "prev_static_tag=${prevTag}"
+if [ "$1" == "ENV" ]; then
+  echo "BRANCH_TAG=${branchTag}"
+  echo "BRANCH_STATIC_TAG=${branchStaticTag}"
+  echo "PREV_STATIC_TAG=${prevTag}"
+else
+  echo "branch_tag=${branchTag}"
+  echo "branch_static_tag=${branchStaticTag}"
+  echo "prev_static_tag=${prevTag}"
+fi
