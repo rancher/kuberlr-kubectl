@@ -7,6 +7,20 @@
 {{- end -}}
 
 {{/*
+The image to use
+*/}}
+{{- define "kubectl.image" -}}
+{{- $temp_registry := (include "system_default_registry" .) }}
+{{- if $temp_registry }}
+{{- printf "%s%s:%s" $temp_registry .Values.global.kubectl.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.global.kubectl.image.tag) }}
+{{- else if .Values.global.imageRegistry }}
+{{- printf "%s/%s:%s" .Values.global.imageRegistry .Values.global.kubectl.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.global.kubectl.image.tag) }}
+{{- else }}
+{{- printf "%s:%s" .Values.global.kubectl.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.global.kubectl.image.tag) }}
+{{- end }}
+{{- end }}
+
+{{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
