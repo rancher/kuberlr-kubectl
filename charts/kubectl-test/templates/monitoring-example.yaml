@@ -38,7 +38,7 @@ spec:
       tolerations: {{ include "linux-node-tolerations" . | nindent 8 }}
       containers:
         - name: run-scripts
-          image: {{ template "system_default_registry" . }}{{ .Values.global.kubectl.repository }}:{{ .Values.global.kubectl.tag }}
+          image: {{ template "kubectl.image" . }}
           imagePullPolicy: {{ $.Values.global.kubectl.pullPolicy | default "Always" }}
           {{- if and .Values.global.kubectl (hasKey .Values.global.kubectl "kuberlrAllowDownload") }}
           env:

@@ -68,7 +68,7 @@ spec:
         {{- end }}
       containers:
         - name: {{ include "kubectlTest.fullname" . }}-patch-sa
-          image: {{ include "system_default_registry" . }}{{ .Values.global.kubectl.repository }}:{{ .Values.global.kubectl.tag }}
+          image: {{ template "kubectl.image" . }}
           imagePullPolicy: IfNotPresent
           command: ["kubectl", "-n", {{ .Release.Namespace | quote }}, "patch", "serviceaccount", "default", "-p", "{\"automountServiceAccountToken\": false}"]
           {{- if and .Values.global.kubectl (hasKey .Values.global.kubectl "kuberlrAllowDownload") }}
