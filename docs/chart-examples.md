@@ -1,7 +1,7 @@
 # Chart Implementation Examples and Best Practice
 
 The goal of this image is to replace `rancher/kubectl` as the primary `kubectl` image for Rancher projects.
-This document will cover the best-practices that already exist around using `rancher/kubectl` - so still apply here - and the new ones for `rancher/kubrlr-kubect` features.
+This document will cover the best-practices that already exist around using `rancher/kubectl` - so still apply here - and the new ones for `rancher/kuberlr-kubectl` features.
 
 ## Required Chart Global Values
 
