@@ -30,29 +30,23 @@ WORKDIR /tmp
 
 ARG KUBECTL_VERSION_INFO
 
-SHELL ["/bin/bash", "-c"]
-RUN set -fx; versions=($KUBECTL_VERSION_INFO); \
-    for i in "${!versions[@]}"; do \
-        echo "The index is $i and the value is ${versions[$i]}"; \
-        version=$(echo ${versions[$i]} | cut -d: -f1); \
+COPY kubectl-versions.txt /tmp/kubectl-versions.txt
+RUN touch /tmp/kubectl-sha256sums.txt && \
+    grep "linux/${TARGETARCH}" /tmp/kubectl-versions.txt \
+    | while read -r version arch hash_line; do \
+        hash="${hash_line#sha256:}"; \
         kubectl_url="https://dl.k8s.io/release/${version}/bin/linux/${TARGETARCH}/kubectl"; \
         kubectl_target="/tmp/kubectl${version:1}"; \
         echo "Downloading kubectl version ${version} from ${kubectl_url}"; \
         echo "Targeting ${kubectl_target}"; \
         curl -fsSL "$kubectl_url" -o "$kubectl_target"; \
         chmod 0755 "$kubectl_target"; \
+        echo "${hash}  ${kubectl_target}" >> /tmp/kubectl-sha256sums.txt; \
     done
 
-RUN set -fx; versions=($KUBECTL_VERSION_INFO); \
-    for i in "${!versions[@]}"; do \
-        version=$(echo ${versions[$i]} | cut -d: -f1); \
-        arm64_sum=$(echo ${versions[$i]} | cut -d: -f2); \
-        amd64_sum=$(echo ${versions[$i]} | cut -d: -f3); \
-        kubectl_target="/tmp/kubectl${version:1}"; \
-        KUBE_SUM_NAME="${TARGETARCH}_sum"; \
-        KUBE_SUM=${!KUBE_SUM_NAME}; \
-        echo "${KUBE_SUM} ${kubectl_target}" | sha256sum -c -; \
-    done
+
+RUN set -eux; \
+    sha256sum -c /tmp/kubectl-sha256sums.txt
 
 RUN cp /tmp/kubectl* /chroot/usr/bin/
 
