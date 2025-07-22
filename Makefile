@@ -1,7 +1,3 @@
-# To avoid polluting the Makefile, versions and checksums for tooling and
-# dependencies are defined at hack/make/deps.mk.
-#include hack/make/deps.mk
-
 # Include logic that can be reused across projects.
 include hack/make/build.mk
 
