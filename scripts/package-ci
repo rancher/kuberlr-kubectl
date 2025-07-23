@@ -1,14 +1,17 @@
 #!/bin/bash
 set -e
-set -x
 
 echo "Starting package script..."
 
 SCRIPTS_DIR=$(realpath $(dirname $0))
 
 source "$SCRIPTS_DIR/version"
+source "$SCRIPTS_DIR/util-ci-helpers"
 
 GIT_ROOT=$(dirname $SCRIPTS_DIR)
 cd "$GIT_ROOT"
 
+assert_file_not_exists ci/multiarch-image.oci "Must run clean up before this script, or run via ci script"
 REPO=${REPO} TAG=${TAG} make build-validate
+assert_dir_exists ci
+assert_file_exists ci/multiarch-image.oci
