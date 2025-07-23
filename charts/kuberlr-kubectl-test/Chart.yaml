@@ -15,6 +15,6 @@ keywords:
   - applications
   - infrastructure
   - testing
-kubeVersion: '>= 1.30.0-0'
+kubeVersion: '>= 1.26.0-0'
 name: rancher-kubectl-test
 version: 999

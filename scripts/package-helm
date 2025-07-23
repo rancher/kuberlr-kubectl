@@ -12,17 +12,17 @@ source "$(dirname "$0")/util-chart"
 
 cd "$(dirname "$0")/.."
 
-echo "Preparing Prometheus Federator release chart"
+echo "Preparing Kuberlr-Kuebctl testing chart"
 clean-old-charts
 cp -rf charts build/
 
 if [[ "$REPO" != "rancher" ]]; then
   echo "Using custom repo: $REPO to build chart"
-  edit-chart ./build/charts/kubectl-test/Chart.yaml "${HELM_CHART_VERSION}" "${HELM_IMAGE_TAG}" "${REPO}"
+  edit-chart ./build/charts/kuberlr-kubectl-test/Chart.yaml "${HELM_CHART_VERSION}" "${HELM_IMAGE_TAG}" "${REPO}"
 else
-  edit-chart ./build/charts/kubectl-test/Chart.yaml "${HELM_CHART_VERSION}" "${HELM_IMAGE_TAG}"
+  edit-chart ./build/charts/kuberlr-kubectl-test/Chart.yaml "${HELM_CHART_VERSION}" "${HELM_IMAGE_TAG}"
 fi
-if ! package-chart ./build/charts/kubectl-test ./build/charts ; then
+if ! package-chart ./build/charts/kuberlr-kubectl-test ./build/charts ; then
   echo "package-chart failed..."
   exit 1
 fi

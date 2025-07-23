@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+set -e
+
+DONT_CLEAN=${DONT_CLEAN:-false}
+
+header() {
+  local text="$1"
+  local width=53  # Adjust this for desired total width
+  local padding=$(( (width - ${#text}) / 2 ))  # Calculate padding for centering
+
+  printf '%*s\n' "$width" | tr ' ' '-'
+  printf '%*s%s%*s\n' "$padding" "" "$text" "$padding" ""
+  printf '%*s\n' "$width" | tr ' ' '-'
+}
+
+cleanupTest() {
+  header "CLEANUP"
+  echo "Cleaning up before exit..."
+  if k3d cluster list $CLUSTER_NAME 2> /dev/null; then
+    k3d cluster delete $CLUSTER_NAME
+  fi
+}
+
+onExit() {
+  if [[ "$?" -eq 0 ]] || [ "$DONT_CLEAN" == true ]; then
+    exit 0
+  fi
+
+  cleanupTest
+}
+trap onExit EXIT
+
+source "$(dirname "$0")/version"
+K3S_MIN_VERSION_TAG=v1.31.10-k3s1
+
+cd "$(dirname "$0")/.."
+
+# Setup CI specific Vars
+export CLUSTER_NAME='e2e-ci-kuberlr-kubectl'
+export E2E_CI=true
+export K3S_VERSION=${K3S_VERSION:-$K3S_MIN_VERSION_TAG}
+
+if k3d cluster list $CLUSTER_NAME 2> /dev/null; then
+  echo "The test cluster '$CLUSTER_NAME' already exists for some reason"
+  echo "Either manually delete the tests cluster, or pick a new cluser name to use."
+  exit 0
+fi
+
+set +e
+KUBE_PROXY_PIDS=$(ps aux|grep -v grep|grep kubectl|grep proxy)
+set -e
+if [ "$KUBE_PROXY_PIDS" != "" ]; then
+  echo "$KUBE_PROXY_PIDS" | while IFS= read -r kubeProxy; do
+    kill -9 "$(echo "$kubeProxy" | awk '{print $2}')"
+  done
+fi
+
+header "Starting E2E tests for Kuberlr-Kubectl@$TAG"
+
+# Pre build images
+header "Building Kuberlr-Kubectl images for testing"
+REPO=${REPO} TAG=${TAG} make build-image;
+REPO=${REPO} TAG=${TAG} make package-helm;
+header "Image built ${REPO}/kuberlr-kubectl:${TAG}"
+export TAG
+
+# Install k3d
+which k3d > /dev/null  2>&1
+if [ "$?" -eq 1 ]; then
+  echo "Found k3d not installed setting up now..."
+  ./.github/workflows/e2e/scripts/install-k3d.sh
+fi
+
+# Setup k3d cluster
+header "Setting up E2E cluster"
+./.github/workflows/e2e/scripts/setup-cluster.sh
+
+# Import Images Into k3d
+header "Importing images to k3d"
+k3d image import ${REPO}/kuberlr-kubectl:${TAG} -c $CLUSTER_NAME;
+
+# Setup kubectl context
+kubectl config use-context "k3d-$CLUSTER_NAME";
+
+## TODO: install & verify any prereqs to test
+
+# Install Kuberlr-Kubectl
+header "Installing kuberlr-kubectl CI chart"
+./.github/workflows/e2e/scripts/install-ci-chart.sh;
+
+# Check if Kuberlr-Kubectl is up
+header "Verifying kuberlr-kubectl CI is UP"
+./.github/workflows/e2e/scripts/validate-ci-chart.sh;
+
+## TODO: steps to verify the images?
+
+### ALL LOGIC ABOVE THIS
+if [ "$DONT_CLEAN" == true ]; then
+  header "Local e2e testing was a SUCCESS"
+  header "Exiting early, to leave cluster for testing"
+  exit;
+fi
+
+# Uninstall Kuberlr-Kubectl
+header "Uninstall kuberlr-kubectl CI chart"
+./.github/workflows/e2e/scripts/uninstall-ci-chart.sh;
+
+header "Local e2e testing was a SUCCESS"
+cleanupTest
