@@ -61,8 +61,8 @@ jobs:
       - name: Check for changes
         if: ${{ env.is_supported == 'true' }}
         run: |
-          rm -f .github/scripts/update-script.sh
-          git restore --staged --worktree .github/scripts/update-script.sh || true
+          rm -f .github/scripts/bump-kubectl-patch-versions
+          git restore --staged --worktree .github/scripts/bump-kubectl-patch-versions || true
 
           if git diff --quiet; then
             echo "No changes detected."
