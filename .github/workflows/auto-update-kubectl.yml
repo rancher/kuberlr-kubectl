@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: "Trigger version check for ${{ matrix.target_branch }}"
-        uses: .github/workflows/create-versions-bump-pr.yml
+        uses: ./.github/workflows/create-versions-bump-pr.yml
         with:
           target_branch: ${{ matrix.target_branch }}
           script_ref: ${{ github.sha }}
