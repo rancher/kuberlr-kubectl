@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# If the first argument ($1) is provided and not empty, use it.
+# Otherwise, default to "kubectl-versions.txt".
+VERSIONS_FILE=${1:-"kubectl-versions.txt"}
+TEMP_FILE="${VERSIONS_FILE}.tmp"
+
+echo "Using versions file: $VERSIONS_FILE"
+echo "Temporary file will be: $TEMP_FILE"
+
+# Check if the input file exists
+if [[ ! -f "$VERSIONS_FILE" ]]; then
+    echo "Error: Input file '$VERSIONS_FILE' not found."
+    exit 1
+fi
+
+RELEASES=$(gh api graphql -F owner='kubernetes' -F name='kubernetes' -f query='query($name: String!, $owner: String!) {repository(owner: $owner, name: $name) {releases(first: 100) {nodes { tagName, isPrerelease }} }}' | jq -r '.data.repository.releases.nodes[] | select(.isPrerelease != true) | .tagName' | sort -V)
+
+# Iterate over each line of the input file
+while IFS= read -r VERSION; do
+    PREFIX=$(echo "$VERSION" | cut -d. -f1,2)
+    echo "Checking version for $VERSION - using $PREFIX to search..."
+    NEWEST_OPTION=$(echo "$RELEASES"| grep "$PREFIX" | sort -rn |head -1)
+    if [ "$VERSION" == "$NEWEST_OPTION" ]; then
+      echo "Nothing to update - $VERSION already newest patch for that Major.Minor"
+      # If the version is the same, keep the original line
+      echo "$VERSION" >> "$TEMP_FILE"
+      continue
+    fi
+    echo "Found newer patch $NEWEST_OPTION to replace $VERSION"
+    echo "$NEWEST_OPTION" >> "$TEMP_FILE"
+done < "$VERSIONS_FILE"
+
+# Check if the temporary file was created successfully
+if [[ -f "$TEMP_FILE" ]]; then
+    # Replace the original file with the temporary file
+    mv "$TEMP_FILE" "$VERSIONS_FILE"
+    echo "File updated successfully: $VERSIONS_FILE"
+else
+    echo "Error: Temporary file not created. No changes made."
+    exit 1
+fi
