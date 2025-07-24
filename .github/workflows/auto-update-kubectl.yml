@@ -1,0 +1,28 @@
+name: Trigger updates for all release branches
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron:  '0 1 * * 0,3'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  trigger-updates:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target_branch:
+          - main
+          - release/v2.x
+          - release/v3.x
+          - release/v4.x
+
+    steps:
+      - name: "Trigger version check for ${{ matrix.target_branch }}"
+        uses: .github/workflows/create-versions-bump-pr.yml
+        with:
+          target_branch: ${{ matrix.target_branch }}
+          script_ref: ${{ github.sha }}
