@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+set -x
+
+echo "Starting package script..."
+
+SCRIPTS_DIR=$(realpath $(dirname $0))
+
+source "$SCRIPTS_DIR/version"
+
+GIT_ROOT=$(dirname $SCRIPTS_DIR)
+cd "$GIT_ROOT"
+
+REPO=${REPO} TAG=${TAG} make build-validate
