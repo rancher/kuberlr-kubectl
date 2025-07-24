@@ -1,30 +1,9 @@
 ifeq ($(VERSION),)
-	# Define VERSION, which is used for image tags or to bake it into the
-	# compiled binary to enable the printing of the application version,
-	# via the --version flag.
-	CHANGES = $(shell git status --porcelain --untracked-files=no)
-	ifneq ($(CHANGES),)
-		DIRTY = -dirty
-	endif
-
-	GIT_TAG = $(shell git tag -l --contains HEAD | head -n 1)
-	COMMIT = $(shell git rev-parse --short HEAD)
-	VERSION = $(COMMIT)$(DIRTY)
-
-	# Override VERSION with the Git tag if the current HEAD has a tag pointing to
-	# it AND the worktree isn't dirty.
-	ifneq ($(GIT_TAG),)
-		ifeq ($(DIRTY),)
-			VERSION = $(GIT_TAG)
-		endif
-	endif
+VERSION := $(shell ./scripts/version --short VERSION)
 endif
 
 ifeq ($(TAG),)
-	TAG = $(VERSION)
-	ifneq ($(DIRTY),)
-		TAG = dev
-	endif
+TAG := $(shell ./scripts/version --short TAG)
 endif
 
 RUNNER := docker
