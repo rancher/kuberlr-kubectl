@@ -24,38 +24,21 @@ RUN zypper --non-interactive refresh && \
 COPY --from=kuberlr /bin/kuberlr /chroot/bin/
 RUN cd /chroot/bin && ln -s ./kuberlr ./kubectl
 COPY --from=kuberlr /home/kuberlr /chroot/home/kuberlr
-RUN sed -i 's/AllowDownload = true/AllowDownload = false/' /chroot/home/kuberlr/.kuberlr/kuberlr.conf
 
 WORKDIR /tmp
+COPY kubectl-versions.txt /tmp/kubectl-versions.txt
+# kuberlr get verifies bin hash for us
+RUN while read -r version; do \
+    /chroot/bin/kuberlr get $version; \
+    done < ./kubectl-versions.txt; \
+    /chroot/bin/kuberlr bins \
+    && cp -a /root/.kuberlr/linux-*/* /chroot/usr/bin/ \
+    && /chroot/bin/kuberlr bins
 
-ARG KUBECTL_VERSION_INFO
+# Disable ability to download kubectl due to air-gap support
+RUN sed -i 's/AllowDownload = true/AllowDownload = false/' /chroot/home/kuberlr/.kuberlr/kuberlr.conf
 
-SHELL ["/bin/bash", "-c"]
-RUN set -fx; versions=($KUBECTL_VERSION_INFO); \
-    for i in "${!versions[@]}"; do \
-        echo "The index is $i and the value is ${versions[$i]}"; \
-        version=$(echo ${versions[$i]} | cut -d: -f1); \
-        kubectl_url="https://dl.k8s.io/release/${version}/bin/linux/${TARGETARCH}/kubectl"; \
-        kubectl_target="/tmp/kubectl${version:1}"; \
-        echo "Downloading kubectl version ${version} from ${kubectl_url}"; \
-        echo "Targeting ${kubectl_target}"; \
-        curl -fsSL "$kubectl_url" -o "$kubectl_target"; \
-        chmod 0755 "$kubectl_target"; \
-    done
-
-RUN set -fx; versions=($KUBECTL_VERSION_INFO); \
-    for i in "${!versions[@]}"; do \
-        version=$(echo ${versions[$i]} | cut -d: -f1); \
-        arm64_sum=$(echo ${versions[$i]} | cut -d: -f2); \
-        amd64_sum=$(echo ${versions[$i]} | cut -d: -f3); \
-        kubectl_target="/tmp/kubectl${version:1}"; \
-        KUBE_SUM_NAME="${TARGETARCH}_sum"; \
-        KUBE_SUM=${!KUBE_SUM_NAME}; \
-        echo "${KUBE_SUM} ${kubectl_target}" | sha256sum -c -; \
-    done
-
-RUN cp /tmp/kubectl* /chroot/usr/bin/
-
+# Setup kuberlr user and perms
 RUN useradd -u 1000 -U kuberlr \
     && cp /etc/passwd /chroot/etc/passwd \
     && cp /etc/group /chroot/etc/group \

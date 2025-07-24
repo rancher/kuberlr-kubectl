@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+SCRIPTS_DIR=$(realpath "$(dirname "$0")")
+PROJECT_DIR=$(dirname "$SCRIPTS_DIR")
+
+cd "$SCRIPTS_DIR"
+
+./version
+
+if [[ -f "$PROJECT_DIR/multiarch-image.oci" ]]; then
+   # Remove old OCI file
+    rm "$PROJECT_DIR/multiarch-image.oci"
+    echo "Removed old CI OCI file"
+fi
+
+# This project has no local go code, so no need to call build scripts
+# instead immediately packages container image for CI
+./package-ci
+
+# Tests come after building the image and charts
+./verify-local-multiarch-image
