@@ -15,9 +15,6 @@ on:
 #   - PUBLIC_REGISTRY_USERNAME
 #   - PUBLIC_REGISTRY_PASSWORD
 
-permissions:
-  contents: write # Upload artefacts to release.
-
 env:
   PUBLIC_REGISTRY: docker.io
 
@@ -25,7 +22,7 @@ jobs:
 
   publish-public:
     permissions:
-      contents: read
+      contents: write
       # write is needed for:
       # - OIDC for cosign's use in ecm-distro-tools/publish-image.
       # - Read vault secrets in rancher-eio/read-vault-secrets.
