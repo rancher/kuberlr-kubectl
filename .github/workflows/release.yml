@@ -44,6 +44,14 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
+      - name : Make test helm chart
+        run: TAG=$TAG_NAME make package-helm
+      - name: Add test helm chart to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$TAG_NAME" "./build/charts/rancher-kubectl-test-${TAG_NAME}.tgz"
+
       - name: Load Secrets from Vault
         uses: rancher-eio/read-vault-secrets@main
         with:

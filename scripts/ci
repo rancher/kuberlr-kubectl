@@ -8,9 +8,9 @@ cd "$SCRIPTS_DIR"
 
 ./version
 
-if [[ -f "$PROJECT_DIR/multiarch-image.oci" ]]; then
+if [[ -f "$PROJECT_DIR/ci/multiarch-image.oci" ]]; then
    # Remove old OCI file
-    rm "$PROJECT_DIR/multiarch-image.oci"
+    rm "$PROJECT_DIR/ci/multiarch-image.oci"
     echo "Removed old CI OCI file"
 fi
 
