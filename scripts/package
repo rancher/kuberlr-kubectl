@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -e
+
+source $(dirname $0)/version
+
+cd $(dirname $0)/..
+
+echo "Starting \`${IMAGE_NAME}\` image packaging:";
+
+echo "Building \`${FULL_IMAGE}\` from \`package/Dockerfile\`:";
+
+if [[ ${USE_DOCKER_BUILDX} -eq 1 ]]; then
+  docker buildx build --platform linux/amd64,linux/arm64 -f package/Dockerfile --build-arg RANCHER_PROJECT_MONITORING=$RANCHER_PROJECT_MONITORING -t "${FULL_IMAGE}" .
+else
+  docker build -f package/Dockerfile --build-arg RANCHER_PROJECT_MONITORING=$RANCHER_PROJECT_MONITORING -t "${FULL_IMAGE}" .
+fi
+
+echo "Completed building ${FULL_IMAGE} container image"
