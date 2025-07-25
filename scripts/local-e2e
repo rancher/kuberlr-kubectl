@@ -31,7 +31,7 @@ onExit() {
 trap onExit EXIT
 
 source "$(dirname "$0")/version"
-K3S_MIN_VERSION_TAG=v1.31.10-k3s1
+source "$(dirname "$0")/k3s-version"
 
 cd "$(dirname "$0")/.."
 

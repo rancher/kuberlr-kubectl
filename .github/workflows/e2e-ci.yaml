@@ -35,7 +35,6 @@ env:
   CGO_ENABLED: 0
   SETUP_GO_VERSION: '^1.20'
   YQ_VERSION: v4.25.1
-  K3S_MIN_VERSION_TAG: v1.31.10-k3s1
   E2E_CI: true
   REPO: rancher
   APISERVER_PORT: 8001
@@ -97,8 +96,11 @@ jobs:
           echo TAG=$TAG >> $GITHUB_ENV
           echo FULL_IMAGE=$FULL_IMAGE >> $GITHUB_ENV
 
+      - name: Set K3S Min/Max Versions
+        run: bash ./scripts/k3s-version >> $GITHUB_ENV
       - name: Set K3S_VERSION
         run: echo "K3S_VERSION=${{ inputs.k3s_version || env.K3S_MIN_VERSION_TAG }}" >> $GITHUB_ENV
+
       -
         name: Perform pre-e2e image build
         run: |
