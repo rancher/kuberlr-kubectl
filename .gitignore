@@ -11,3 +11,4 @@ versions.txt
 new-versions.txt
 /image_arch_test
 *.oci
+kubectl-versions.txt.log
