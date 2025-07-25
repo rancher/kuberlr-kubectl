@@ -46,7 +46,7 @@ jobs:
           fi
           echo "is_supported=true" >> $GITHUB_ENV
 
-      - name: Pull script from main branch
+      - name: "Pull script from `${{ inputs.script_ref || 'main' }}` branch"
         if: ${{ env.is_supported == 'true' }}
         run: |
           git fetch origin ${{ inputs.script_ref || 'main' }}
@@ -59,10 +59,27 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check for changes
+        id: changes_check
         if: ${{ env.is_supported == 'true' }}
         run: |
-          rm -f .github/scripts/bump-kubectl-patch-versions
+          rm -f .github/scripts/bump-kubectl-patch-versions || true
           git restore --staged --worktree .github/scripts/bump-kubectl-patch-versions || true
+
+          # Read log for PR title and clean up log file
+          LOG_FILE="kubectl-versions.txt.log"
+          if [[ -f "$LOG_FILE" ]]; then
+            echo "Log file exists, parsing for title text..."
+            # Check if the log file exists and is not empty
+            if [[ -s "$LOG_FILE" ]]; then
+              LOG_TITLE=$(cat "$LOG_FILE" | awk '{printf "%s%s", (NR==1?"":", "), $0} END{print ""}')
+              echo "Log file content found, created title:"
+              echo "$LOG_TITLE"
+              echo "pr_title_versions=$LOG_TITLE" >> $GITHUB_OUTPUT
+            fi
+          
+            echo "Removing log file: $LOG_FILE"
+            rm "$LOG_FILE"
+          fi
 
           if git diff --quiet; then
             echo "No changes detected."
@@ -92,7 +109,9 @@ jobs:
         run: |
           {
             echo 'PR_BODY<<EOF'
-            echo "Automated update using the script from \`main\` branch."
+            echo "Bumping Kubectl versions to: ${{ steps.changes_check.outputs.pr_title_versions }}"
+            echo ""
+            echo "Automated update using the kubectl bump script from \`${{ inputs.script_ref || 'main' }}\` branch."
             echo ""
             echo "Triggered on: \`${{ inputs.target_branch }}\`"
             echo "Initiated by: @${GITHUB_ACTOR}"
@@ -108,7 +127,7 @@ jobs:
         if: ${{ env.changes_exist == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_TITLE: "Automated `kubectl` update for `${{ inputs.target_branch }}`"
+          PR_TITLE: "[${{ inputs.target_branch }}] Automated `kubectl` updates: `${{ steps.changes_check.outputs.pr_title_versions }}`"
         run: |
           EXISTING_PR=$(gh pr list --limit 100 --json title,url \
             | jq --arg t "${PR_TITLE}" -r '.[] | select(.title==$t) | .url')

@@ -5,9 +5,11 @@ set -euo pipefail
 # Otherwise, default to "kubectl-versions.txt".
 VERSIONS_FILE=${1:-"kubectl-versions.txt"}
 TEMP_FILE="${VERSIONS_FILE}.tmp"
+UPDATE_LOG_FILE="${VERSIONS_FILE}.log"
 
 echo "Using versions file: $VERSIONS_FILE"
 echo "Temporary file will be: $TEMP_FILE"
+echo "Log file will be: $UPDATE_LOG_FILE"
 
 # Check if the input file exists
 if [[ ! -f "$VERSIONS_FILE" ]]; then
@@ -30,6 +32,7 @@ while IFS= read -r VERSION; do
     fi
     echo "Found newer patch $NEWEST_OPTION to replace $VERSION"
     echo "$NEWEST_OPTION" >> "$TEMP_FILE"
+    echo "$NEWEST_OPTION" >> "$UPDATE_LOG_FILE"
 done < "$VERSIONS_FILE"
 
 # Check if the temporary file was created successfully
@@ -41,3 +44,5 @@ else
     echo "Error: Temporary file not created. No changes made."
     exit 1
 fi
+
+echo "Remember the $UPDATE_LOG_FILE must be cleaned up after reading..."
