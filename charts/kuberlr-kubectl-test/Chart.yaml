@@ -1,0 +1,20 @@
+annotations:
+  catalog.cattle.io/certified: rancher
+  catalog.cattle.io/display-name: Rancher Kubectl Testing
+  catalog.cattle.io/kube-version: '>= 1.26.0-0'
+  catalog.cattle.io/namespace: cattle-testing
+  catalog.cattle.io/os: linux
+  catalog.cattle.io/permits-os: linux,windows
+  catalog.cattle.io/rancher-version: '>= 2.9.0-0'
+  catalog.cattle.io/release-name: rancher-kubectl-test
+  catalog.cattle.io/upstream-version: 999
+apiVersion: v2
+appVersion: 999
+description: Provides ability to test the kubectl image from Rancher.
+keywords:
+  - applications
+  - infrastructure
+  - testing
+kubeVersion: '>= 1.26.0-0'
+name: rancher-kubectl-test
+version: 999
