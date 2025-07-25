@@ -53,7 +53,7 @@ jobs:
           TAG_NAME: ${{ github.ref_name }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "$TAG_NAME" "./build/charts/rancher-kubectl-test-${TAG_NAME}.tgz"
+          gh release upload "${TAG_NAME}" "./build/charts/rancher-kubectl-test-${TAG_NAME#v}.tgz"
 
       - name: Load Secrets from Vault
         uses: rancher-eio/read-vault-secrets@main
