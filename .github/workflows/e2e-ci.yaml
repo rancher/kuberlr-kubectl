@@ -69,7 +69,7 @@ jobs:
           go-version: '>=1.20.0'
       - uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4
       - name : Install helm
-        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check if yq is installed
