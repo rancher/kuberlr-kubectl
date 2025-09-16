@@ -17,6 +17,7 @@ on:
 
 env:
   PUBLIC_REGISTRY: docker.io
+  REPO: rancher
 
 jobs:
 
@@ -58,9 +59,9 @@ jobs:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD ;
-            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials registry | PRIME_STG_REGISTRY ;
-            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials username | PRIME_STG_REGISTRY_USERNAME ;
-            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password | PRIME_STG_REGISTRY_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials registry | PRIME_STAGE_REGISTRY_REGISTRY;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials username | PRIME_STAGE_REGISTRY_USERNAME;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password | PRIME_STAGE_REGISTRY_PASSWORD;
 
       - name: Build and push all platforms
         uses: rancher/ecm-distro-tools/actions/publish-image@master
@@ -68,17 +69,18 @@ jobs:
           image: ${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
           tag: ${{ github.ref_name }}
           platforms: "linux/amd64,linux/arm64"
+          identity-registry: ${{ secrets.PRIME_STAGE_REGISTRY_REGISTRY }}
 
           public-registry: ${{ env.PUBLIC_REGISTRY }}
-          public-repo: ${{ vars.REPO || github.repository_owner }}
+          public-repo: ${{ vars.REPO || env.REPO || github.repository_owner }}
           public-username: ${{ env.DOCKER_USERNAME || vars.DOCKER_USERNAME || github.repository_owner }}
           public-password: ${{ env.DOCKER_PASSWORD || secrets.DOCKER_PASSWORD }}
 
           push-to-prime: true
-          prime-registry: ${{ env.PRIME_STG_REGISTRY }}
-          prime-repo: ${{ vars.REPO }}
-          prime-username: ${{ env.PRIME_STG_REGISTRY_USERNAME }}
-          prime-password: ${{ env.PRIME_STG_REGISTRY_PASSWORD }}
+          prime-registry: ${{ env.PRIME_STAGE_REGISTRY_REGISTRY }}
+          prime-repo: rancher
+          prime-username: ${{ env.PRIME_STAGE_REGISTRY_USERNAME }}
+          prime-password: ${{ env.PRIME_STAGE_REGISTRY_PASSWORD }}
 
       -
         name: Login to GitHub Container Registry
