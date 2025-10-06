@@ -26,41 +26,43 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: write # Upload artefacts to release.
-
 env:
   PUBLIC_REGISTRY: ghcr.io
 
 jobs:
   ci:
     permissions:
+      contents: write  # Upload artefacts to release.
       # write is needed for:
       # - OIDC for cosign's use in ecm-distro-tools/publish-image.
       # - Read vault secrets in rancher-eio/read-vault-secrets.
-      # - Publish image to ghcr.io
       id-token: write
+      packages: write
+      attestations: write
     runs-on: runs-on,runner=2cpu-linux-x64,run-id=${{ github.run_id }}
     steps:
+      - name: Check out repository code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
       - name: Load Secrets from Vault
         uses: rancher-eio/read-vault-secrets@main
         with:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD ;
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKER_PASSWORD }}
+          username: ${{ env.DOCKER_USERNAME || vars.DOCKER_USERNAME || github.repository_owner }}
+          password: ${{ env.DOCKER_PASSWORD || secrets.DOCKER_PASSWORD }}
 
       -
         # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
         name: Set up QEMU
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3
-      - name: Check out repository code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
       - name: Basic CI
         run: make ci
       - name: Upload CI files to artifacts (on failure)

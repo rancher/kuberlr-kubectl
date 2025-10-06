@@ -43,17 +43,16 @@ env:
   DEBUG: ${{ github.event.inputs.debug || false }}
   CLUSTER_NAME: 'e2e-ci-kuberlr-kubectl'
 
-permissions:
-  contents: write
-
 jobs:
   e2e-kuberlr-kubectl:
     permissions:
+      contents: write  # Upload artefacts to release.
       # write is needed for:
       # - OIDC for cosign's use in ecm-distro-tools/publish-image.
       # - Read vault secrets in rancher-eio/read-vault-secrets.
-      # - Publish image to ghcr.io
       id-token: write
+      packages: write
+      attestations: write
     strategy:
       matrix:
         arch:
@@ -61,6 +60,11 @@ jobs:
           - arm64
     runs-on: ${{ github.repository == 'rancher/kuberlr-kubectl' && format('runs-on,image=ubuntu22-full-{1},runner=4cpu-linux-{1},run-id={0}', github.run_id, matrix.arch) || 'ubuntu-latest' }}
     steps:
+      -
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          fetch-depth: 0
+
       - name: Load Secrets from Vault
         uses: rancher-eio/read-vault-secrets@main
         with:
@@ -70,18 +74,15 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKER_PASSWORD }}
+          username: ${{ env.DOCKER_USERNAME || vars.DOCKER_USERNAME || github.repository_owner }}
+          password: ${{ env.DOCKER_PASSWORD || secrets.DOCKER_PASSWORD }}
 
       -
         # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
         name: Set up QEMU
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3
-      -
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-        with:
-          fetch-depth: 0
+
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
           go-version: '>=1.20.0'
