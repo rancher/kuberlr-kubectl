@@ -48,6 +48,12 @@ permissions:
 
 jobs:
   e2e-kuberlr-kubectl:
+    permissions:
+      # write is needed for:
+      # - OIDC for cosign's use in ecm-distro-tools/publish-image.
+      # - Read vault secrets in rancher-eio/read-vault-secrets.
+      # - Publish image to ghcr.io
+      id-token: write
     strategy:
       matrix:
         arch:

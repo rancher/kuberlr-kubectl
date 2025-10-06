@@ -34,6 +34,12 @@ env:
 
 jobs:
   ci:
+    permissions:
+      # write is needed for:
+      # - OIDC for cosign's use in ecm-distro-tools/publish-image.
+      # - Read vault secrets in rancher-eio/read-vault-secrets.
+      # - Publish image to ghcr.io
+      id-token: write
     runs-on: runs-on,runner=2cpu-linux-x64,run-id=${{ github.run_id }}
     steps:
       - name: Load Secrets from Vault
