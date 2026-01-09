@@ -42,7 +42,9 @@ RUN sed -i 's/AllowDownload = true/AllowDownload = false/' /chroot/home/kuberlr/
 RUN useradd -u 1000 -U kuberlr \
     && cp /etc/passwd /chroot/etc/passwd \
     && cp /etc/group /chroot/etc/group \
-    && chown -R 1000:1000 /chroot/home/kuberlr
+    && chown -R 1000:1000 /chroot/home/kuberlr \
+    && mkdir -p /chroot/run \
+    && chown 1000:1000 /chroot/run
 
 FROM scratch
 
