@@ -17,7 +17,7 @@ This repo produces a Rancher specific version of the `flavio/kuberlr` image.
 | Branch              | Release Tag   | Rancher Tag (Branch)   |
 |---------------------|---------------|------------------------|
 | main (release/v7.x) | head (v7.Y.Z) | 2.14.Z (main)          |
-| release/v6.x        | v6.Y.Z | 2.13.Z (release/v2.13) |
+| release/v6.x        | v6.Y.Z        | 2.13.Z (release/v2.13) |
 | release/v5.x        | v5.Y.Z        | 2.12.Z (release/v2.12) |
 | release/v4.x        | v4.Y.Z        | 2.11.Z (release/v2.11) |
 | release/v3.x        | v3.Y.Z        | 2.10.Z (release/v2.10) |
@@ -43,12 +43,12 @@ Given that k8s provides a slight version drift, as the Rancher minor lifecycle p
 
 
 | Rancher Version | k8s min | k8s max | `kuberlr-kubectl` image |
-|-----------------|---------|---------|------------------------|
-| 2.14.x          | 1.33    | 1.35    | 3.y.z |
-| 2.13.x          | 1.32    | 1.34    | 3.y.z |
-| 2.12.x          | 1.31    | 1.33    | 3.y.z |
-| 2.11.x          | 1.30    | 1.32    | 3.y.z |
-| 2.10.x          | 1.28    | 1.31    | 3.y.z |
+|-----------------|---------|---------|-------------------------|
+| 2.14.x          | 1.33    | 1.35    | 7.y.z                   |
+| 2.13.x          | 1.32    | 1.34    | 6.y.z                   |
+| 2.12.x          | 1.31    | 1.33    | 5.y.z                   |
+| 2.11.x          | 1.30    | 1.32    | 4.y.z                   |
+| 2.10.x          | 1.28    | 1.31    | 3.y.z                   |
 
 
 > Note: Over-time, as new `kuberlr` binaries are released we can still bump the Y or Z of each `rancher/kuberlr-kubectl` release to update all supported Rancher releases.
