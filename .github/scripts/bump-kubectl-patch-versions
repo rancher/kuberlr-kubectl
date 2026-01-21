@@ -21,6 +21,12 @@ RELEASES=$(gh api graphql -F owner='kubernetes' -F name='kubernetes' -f query='q
 
 # Iterate over each line of the input file
 while IFS= read -r VERSION; do
+    # Skip empty lines
+    if [ -z "$VERSION" ]; then
+        echo "Skipping empty line"
+        continue
+    fi
+    
     PREFIX=$(echo "$VERSION" | cut -d. -f1,2)
     echo "Checking version for $VERSION - using $PREFIX to search..."
     NEWEST_OPTION=$(echo "$RELEASES"| grep "$PREFIX" | sort -rV |head -1)
