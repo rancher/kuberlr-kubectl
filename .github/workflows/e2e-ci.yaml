@@ -61,7 +61,7 @@ jobs:
     runs-on: ${{ github.repository == 'rancher/kuberlr-kubectl' && format('runs-on,image=ubuntu22-full-{1},runner=4cpu-linux-{1},run-id={0}', github.run_id, matrix.arch) || 'ubuntu-latest' }}
     steps:
       -
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
@@ -142,7 +142,7 @@ jobs:
         run: ./.github/workflows/e2e/scripts/generate-artifacts.sh;
       - name: Upload logs and manifests on failure
         if: failure()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: artifacts-${{ matrix.arch }}-${{ inputs.k3s_version || env.K3S_MIN_VERSION_TAG }}
           path: artifacts/
