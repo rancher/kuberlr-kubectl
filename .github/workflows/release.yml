@@ -63,13 +63,15 @@ jobs:
             secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials username | PRIME_STAGE_REGISTRY_USERNAME;
             secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password | PRIME_STAGE_REGISTRY_PASSWORD;
 
-      - name: Build and push all platforms
+
+      - name: Check SemVer Characteristics
+        id: semver_check
+        run: bash ./.github/scripts/check-semver "${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+      - name: Build and push kuberlr-kubectl image (dockerhub and prime stg)
         uses: rancher/ecm-distro-tools/actions/publish-image@master
         with:
           image: ${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
           tag: ${{ github.ref_name }}
-          platforms: "linux/amd64,linux/arm64"
-          identity-registry: ${{ secrets.PRIME_STAGE_REGISTRY_REGISTRY }}
 
           public-registry: ${{ env.PUBLIC_REGISTRY }}
           public-repo: ${{ vars.REPO || env.REPO || github.repository_owner }}
@@ -81,6 +83,21 @@ jobs:
           prime-repo: rancher
           prime-username: ${{ env.PRIME_STAGE_REGISTRY_USERNAME }}
           prime-password: ${{ env.PRIME_STAGE_REGISTRY_PASSWORD }}
+
+      - name: Build and push kuberlr-kubectl image (prime prod)
+        if: ${{ steps.semver_check.outputs.HAS_PRERELEASE == 'false' }}
+        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        with:
+          image: ${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
+          tag: ${{ github.ref_name }}
+
+          push-to-public: false
+
+          push-to-prime: true
+          prime-registry: ${{ env.PRIME_REGISTRY }}
+          prime-repo: rancher
+          prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
+          prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
       -
         name: Login to GitHub Container Registry
