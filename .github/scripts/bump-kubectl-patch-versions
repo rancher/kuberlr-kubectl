@@ -20,7 +20,7 @@ fi
 RELEASES=$(gh api graphql -F owner='kubernetes' -F name='kubernetes' -f query='query($name: String!, $owner: String!) {repository(owner: $owner, name: $name) {releases(first: 100) {nodes { tagName, isPrerelease }} }}' | jq -r '.data.repository.releases.nodes[] | select(.isPrerelease != true) | .tagName' | sort -V)
 
 # Iterate over each line of the input file
-while IFS= read -r VERSION; do
+while IFS= read -r VERSION || [[ -n "$VERSION" ]]; do
     PREFIX=$(echo "$VERSION" | cut -d. -f1,2)
     echo "Checking version for $VERSION - using $PREFIX to search..."
     NEWEST_OPTION=$(echo "$RELEASES"| grep "$PREFIX" | sort -rV |head -1)

@@ -20,9 +20,10 @@ jobs:
       matrix:
         target_branch:
           - main
-          - release/v2.x
           - release/v3.x
           - release/v4.x
+          - release/v5.x
+          - release/v6.x
     uses: ./.github/workflows/kubectl-create-bump-pr.yml
     with:
       target_branch: ${{ matrix.target_branch }}
