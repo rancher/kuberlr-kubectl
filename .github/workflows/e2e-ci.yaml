@@ -43,11 +43,16 @@ env:
   DEBUG: ${{ github.event.inputs.debug || false }}
   CLUSTER_NAME: 'e2e-ci-kuberlr-kubectl'
 
-permissions:
-  contents: write
-
 jobs:
   e2e-kuberlr-kubectl:
+    permissions:
+      contents: write  # Upload artefacts to release.
+      # write is needed for:
+      # - OIDC for cosign's use in ecm-distro-tools/publish-image.
+      # - Read vault secrets in rancher-eio/read-vault-secrets.
+      id-token: write
+      packages: write
+      attestations: write
     strategy:
       matrix:
         arch:
@@ -56,17 +61,15 @@ jobs:
     runs-on: ${{ github.repository == 'rancher/kuberlr-kubectl' && format('runs-on,image=ubuntu22-full-{1},runner=4cpu-linux-{1},run-id={0}', github.run_id, matrix.arch) || 'ubuntu-latest' }}
     steps:
       -
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      -
         # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
         name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
-      -
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6
-        with:
-          go-version: '>=1.20.0'
       - uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4
       - name : Install helm
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
