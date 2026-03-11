@@ -16,7 +16,8 @@ This repo produces a Rancher specific version of the `flavio/kuberlr` image.
 ## Branches, Releases, and Rancher
 | Branch              | Release Tag   | Rancher Tag (Branch)   |
 |---------------------|---------------|------------------------|
-| main (release/v7.x) | head (v7.Y.Z) | 2.14.Z (main)          |
+| main (release/v8.x) | head (v8.Y.Z) | 2.15.Z (main)          |
+| release/v7.x        | v7.Y.Z        | 2.14.Z (release/v2.14) |
 | release/v6.x        | v6.Y.Z        | 2.13.Z (release/v2.13) |
 | release/v5.x        | v5.Y.Z        | 2.12.Z (release/v2.12) |
 | release/v4.x        | v4.Y.Z        | 2.11.Z (release/v2.11) |
