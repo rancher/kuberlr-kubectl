@@ -1,2 +1,2 @@
-k3sTestingMaxVersion: v1.33.2+k3s1
-k3sTestingMinVersion: v1.31.10+k3s1
+k3sTestingMaxVersion: v1.35.2+k3s1
+k3sTestingMinVersion: v1.34.5+k3s1
