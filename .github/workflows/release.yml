@@ -54,7 +54,7 @@ jobs:
           gh release upload "${TAG_NAME}" "./build/charts/rancher-kubectl-test-${TAG_NAME#v}.tgz"
 
       - name: Load Secrets from Vault
-        uses: rancher-eio/read-vault-secrets@main
+        uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
         with:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
@@ -64,7 +64,7 @@ jobs:
             secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password | PRIME_STG_REGISTRY_PASSWORD ;
 
       - name: Build and push kuberlr-kubectl image (dockerhub and prime stg)
-        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        uses: rancher/ecm-distro-tools/actions/publish-image@575bb831c67edd950bfedb59d41dd127bd0005d6 # v0.65.2
         with:
           image: ${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
           tag: ${{ github.ref_name }}
@@ -86,7 +86,7 @@ jobs:
 
       - name: Load Secrets from Vault
         if: ${{ steps.semver_check.outputs.HAS_PRERELEASE == 'false' }}
-        uses: rancher-eio/read-vault-secrets@main
+        uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
         with:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry | PRIME_REGISTRY ;
@@ -95,7 +95,7 @@ jobs:
 
       - name: Build and push kuberlr-kubectl image (prime prod)
         if: ${{ steps.semver_check.outputs.HAS_PRERELEASE == 'false' }}
-        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        uses: rancher/ecm-distro-tools/actions/publish-image@575bb831c67edd950bfedb59d41dd127bd0005d6 # v0.65.2
         with:
           image: ${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
           tag: ${{ github.ref_name }}
