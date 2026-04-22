@@ -16,7 +16,6 @@ jobs:
       contents: write
       pull-requests: write
     strategy:
-      max-parallel: 2
       matrix:
         target_branch:
           - main
@@ -24,6 +23,7 @@ jobs:
           - release/v4.x
           - release/v5.x
           - release/v6.x
+          - release/v7.x
     uses: ./.github/workflows/kubectl-create-bump-pr.yml
     with:
       target_branch: ${{ matrix.target_branch }}
