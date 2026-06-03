@@ -57,7 +57,7 @@ jobs:
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD ;
 
       - name: Build and push all image variations
-        uses: rancher/ecm-distro-tools/actions/publish-image@575bb831c67edd950bfedb59d41dd127bd0005d6 # v0.65.2
+        uses: rancher/ecm-distro-tools/actions/publish-image@57efae19ae57d43912001846ffb7f5613706fead # v0.69.2
         with:
           image: ${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
           tag: ${{ needs.prebuild-env.outputs.branch_static_tag }}
