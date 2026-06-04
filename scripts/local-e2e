@@ -64,9 +64,14 @@ REPO=${REPO} TAG=${TAG} make package-helm;
 header "Image built ${REPO}/kuberlr-kubectl:${TAG}"
 export TAG
 
-# Install k3d
+# Add dep-fetch bin directory to PATH if not already present
+if [[ ":$PATH:" != *":${PWD}/bin:"* ]]; then
+  export PATH="${PWD}/bin:${PATH}"
+fi
+# Check for k3d being installed
 which k3d > /dev/null  2>&1
 if [ "$?" -eq 1 ]; then
+  # Install k3d
   echo "Found k3d not installed setting up now..."
 
   # Check if dep-fetch is available
@@ -78,10 +83,7 @@ if [ "$?" -eq 1 ]; then
   fi
 
   dep-fetch sync
-  # Add dep-fetch bin directory to PATH if not already present
-  if [[ ":$PATH:" != *":${PWD}/bin:"* ]]; then
-    export PATH="${PWD}/bin:${PATH}"
-  fi
+
 fi
 
 # Setup k3d cluster
