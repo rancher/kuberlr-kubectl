@@ -9,7 +9,7 @@ cd $(dirname $0)/../../../..
 
 helm upgrade --install --create-namespace -n cattle-ci-system rancher-kuberlr-kubectl-debug \
   --set global.kubectl.image.repository=${REPO:-rancher}/kuberlr-kubectl \
-  --set global.kubectl.image.tag=${TAG:-dev} \
+  --set-string global.kubectl.image.tag=${TAG:-dev} \
   ${cluster_args} \
   ${RANCHER_HELM_ARGS} ./build/charts/kuberlr-kubectl-test
 

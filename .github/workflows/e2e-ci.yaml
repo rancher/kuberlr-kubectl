@@ -109,9 +109,9 @@ jobs:
         run: |
           make package;
           make package-helm;
-      -
-        name : Install k3d
-        run : ./.github/workflows/e2e/scripts/install-k3d.sh
+      - uses: rancherlabs/dep-fetch/actions/sync-deps@56731ed2727325212f71f7682013dc71c18540e1 # v0.1.1
+        with:
+          version: v0.1.1
       -
         name : Setup k3d cluster
         run : ./.github/workflows/e2e/scripts/setup-cluster.sh
