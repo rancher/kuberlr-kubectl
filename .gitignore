@@ -13,3 +13,4 @@ new-versions.txt
 *.oci
 kubectl-versions.txt.log
 kubeconfig.yaml
+.dep-fetch
