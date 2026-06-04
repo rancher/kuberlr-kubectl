@@ -1,5 +1,5 @@
-ARG BCI_VERSION=15.7
-FROM ghcr.io/flavio/kuberlr:v0.6.1 AS kuberlr
+ARG BCI_VERSION=16.0
+FROM ghcr.io/flavio/kuberlr:v0.7.0 AS kuberlr
 FROM registry.suse.com/bci/bci-busybox:${BCI_VERSION} AS final
 FROM registry.suse.com/bci/bci-base:${BCI_VERSION} AS zypper
 
@@ -15,6 +15,7 @@ COPY --from=final / /chroot/
 # install all artefacts within a dir (/chroot) that can then be copied
 # over to a scratch image.
 RUN zypper --non-interactive refresh && \
+    zypper --installroot /chroot --non-interactive update && \
     zypper --installroot /chroot -n rm busybox-vi busybox-links && \
     zypper --installroot /chroot -n in bash-completion && \
     zypper --installroot /chroot clean -a && \
