@@ -68,7 +68,11 @@ export TAG
 which k3d > /dev/null  2>&1
 if [ "$?" -eq 1 ]; then
   echo "Found k3d not installed setting up now..."
-  ./.github/workflows/e2e/scripts/install-k3d.sh
+  dep-fetch sync
+  # Add dep-fetch bin directory to PATH if not already present
+  if [[ ":$PATH:" != *":${PWD}/bin:"* ]]; then
+    export PATH="${PWD}/bin:${PATH}"
+  fi
 fi
 
 # Setup k3d cluster
