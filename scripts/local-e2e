@@ -35,14 +35,6 @@ source "$(dirname "$0")/k3s-version"
 
 cd "$(dirname "$0")/.."
 
-# Check if dep-fetch is available
-which dep-fetch > /dev/null 2>&1
-if [ "$?" -eq 1 ]; then
-  echo "ERROR: dep-fetch is not installed"
-  echo "Please install dep-fetch from: https://github.com/rancherlabs/dep-fetch"
-  exit 1
-fi
-
 # Setup CI specific Vars
 export CLUSTER_NAME='e2e-ci-kuberlr-kubectl'
 export E2E_CI=true
@@ -76,6 +68,15 @@ export TAG
 which k3d > /dev/null  2>&1
 if [ "$?" -eq 1 ]; then
   echo "Found k3d not installed setting up now..."
+
+  # Check if dep-fetch is available
+  which dep-fetch > /dev/null 2>&1
+  if [ "$?" -eq 1 ]; then
+    echo "ERROR: dep-fetch is not installed"
+    echo "Please install dep-fetch from: https://github.com/rancherlabs/dep-fetch"
+    exit 1
+  fi
+
   dep-fetch sync
   # Add dep-fetch bin directory to PATH if not already present
   if [[ ":$PATH:" != *":${PWD}/bin:"* ]]; then
