@@ -64,11 +64,26 @@ REPO=${REPO} TAG=${TAG} make package-helm;
 header "Image built ${REPO}/kuberlr-kubectl:${TAG}"
 export TAG
 
-# Install k3d
+# Add dep-fetch bin directory to PATH if not already present
+if [[ ":$PATH:" != *":${PWD}/bin:"* ]]; then
+  export PATH="${PWD}/bin:${PATH}"
+fi
+# Check for k3d being installed
 which k3d > /dev/null  2>&1
 if [ "$?" -eq 1 ]; then
+  # Install k3d
   echo "Found k3d not installed setting up now..."
-  ./.github/workflows/e2e/scripts/install-k3d.sh
+
+  # Check if dep-fetch is available
+  which dep-fetch > /dev/null 2>&1
+  if [ "$?" -eq 1 ]; then
+    echo "ERROR: dep-fetch is not installed"
+    echo "Please install dep-fetch from: https://github.com/rancherlabs/dep-fetch"
+    exit 1
+  fi
+
+  dep-fetch sync
+
 fi
 
 # Setup k3d cluster
