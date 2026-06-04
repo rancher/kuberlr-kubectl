@@ -109,6 +109,8 @@ jobs:
           prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
   retag:
+    permissions:
+      packages: write
     runs-on: ubuntu-latest
     needs: publish-public
     container:
