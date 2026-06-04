@@ -116,17 +116,10 @@ jobs:
     container:
       image: ghcr.io/rancher/ci-image/charts:latest
     steps:
-      -
-        name: Login to GitHub Container Registry
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Re-tag the image to ghcr.io/${{ github.repository_owner }}
         env:
           FULL_IMAGE_URL: ${{ env.PUBLIC_REGISTRY }}/${{ vars.REPO || github.repository_owner }}/${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
           FULL_IMAGE_GHCR_URL: ghcr.io/${{ github.repository_owner }}/${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
         run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u ${{ github.actor }} --password-stdin
           oras copy ${{ env.FULL_IMAGE_URL }}:${{ github.ref_name }} ${{ env.FULL_IMAGE_GHCR_URL }}:${{ github.ref_name }}
