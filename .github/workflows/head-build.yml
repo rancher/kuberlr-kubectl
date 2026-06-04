@@ -70,16 +70,18 @@ jobs:
 
           push-to-prime: false
 
+  retag:
+    runs-on: ubuntu-latest
+    needs:
+      - prebuild-env
+      - publish-public
+    container:
+      image: ghcr.io/rancher/ci-image/charts:latest
+    steps:
       - name: Re-tag the static head image using the rolling tag
         env:
           FULL_IMAGE_URL: ${{ env.PUBLIC_REGISTRY }}/${{ vars.REPO || github.repository_owner }}/${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
           STATIC_TAG: ${{ needs.prebuild-env.outputs.branch_static_tag }}
           LATEST_TAG: ${{ needs.prebuild-env.outputs.branch_tag }}
         run: |
-          source "${GITHUB_WORKSPACE}/.github/workflows/scripts/tool-versions.sh"
-          ORAS_VERSION_BARE="${ORAS_VERSION#v}"
-          curl -LO "https://github.com/oras-project/oras/releases/download/${ORAS_VERSION}/oras_${ORAS_VERSION_BARE}_linux_amd64.tar.gz"
-          echo "${ORAS_SHA256_amd64}  oras_${ORAS_VERSION_BARE}_linux_amd64.tar.gz" | sha256sum -c
-          mkdir -p oras-install/
-          tar -zxf "oras_${ORAS_VERSION_BARE}_linux_amd64.tar.gz" -C oras-install/
-          oras-install/oras copy ${{ env.FULL_IMAGE_URL }}:${{ env.STATIC_TAG }} ${{ env.FULL_IMAGE_URL }}:${{ env.LATEST_TAG }}
+          oras copy ${{ env.FULL_IMAGE_URL }}:${{ env.STATIC_TAG }} ${{ env.FULL_IMAGE_URL }}:${{ env.LATEST_TAG }}
