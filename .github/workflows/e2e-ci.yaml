@@ -61,7 +61,7 @@ jobs:
     runs-on: ${{ github.repository == 'rancher/kuberlr-kubectl' && format('runs-on,image=ubuntu22-full-{1},runner=4cpu-linux-{1},run-id={0}', github.run_id, matrix.arch) || 'ubuntu-latest' }}
     steps:
       -
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           fetch-depth: 0
 
@@ -69,7 +69,7 @@ jobs:
         # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
         name: Set up QEMU
-        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4
       - uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5
       - name : Install helm
         uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5
