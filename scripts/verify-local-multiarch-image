@@ -8,7 +8,7 @@ CI_ROOT="./ci"
 OCI_ARCHIVE_PATH=${OCI_ARCHIVE_PATH:-"$CI_ROOT/multiarch-image.oci"}
 CI_LOG_FILE="$CI_ROOT/image-ci-$(date +'%Y%m%d-%H%M%S').log"
 TARGET_FILES=(
-  "/bin/kuberlr"
+  "/usr/bin/kuberlr"
   "/usr/bin/kube*"
 )
 OUTPUT_DIR="$CI_ROOT/files"
@@ -30,6 +30,7 @@ cleanup() {
   pwd
     if [[ -n "$TEMP_DIR" && -d "$TEMP_DIR" ]]; then
         log "Cleaning up temporary directory: $TEMP_DIR"
+        chmod -R u+rwx "$TEMP_DIR" 2>/dev/null || true
         rm -rf "$TEMP_DIR"
     fi
 }
