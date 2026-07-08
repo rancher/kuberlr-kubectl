@@ -1,5 +1,5 @@
 ARG BCI_VERSION=16.0
-ARG GO_IMAGE=rancher/hardened-build-base:v1.26.4b1
+ARG GO_IMAGE=rancher/hardened-build-base:v1.26.5b1
 
 # xx provides cross-compilation helpers so the builder always runs on the build
 # machine's native arch while targeting TARGETPLATFORM.
