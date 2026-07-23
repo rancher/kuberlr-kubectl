@@ -71,10 +71,10 @@ jobs:
         # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
         name: Set up QEMU
-        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
       - uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
       - name : Install helm
-        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check if yq is installed
@@ -112,7 +112,7 @@ jobs:
         run: |
           make package;
           make package-helm;
-      - uses: rancherlabs/dep-fetch/actions/sync-deps@56731ed2727325212f71f7682013dc71c18540e1 # v0.1.1
+      - uses: rancherlabs/dep-fetch/actions/sync-deps@35f5facb2f545a6ebbba91f8a635cf2511ade703 # v0.2.0
         with:
           version: v0.1.1
       -
