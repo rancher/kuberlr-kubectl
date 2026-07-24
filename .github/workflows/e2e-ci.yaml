@@ -16,7 +16,7 @@ on:
       - 'docs/**'
       - '*.md'
       - '.gitignore'
-      - 'CODEOWNERS'
+      - '../CODEOWNERS'
       - 'LICENSE'
       - 'Makefile'
   push:
@@ -28,7 +28,7 @@ on:
       - 'docs/**'
       - '*.md'
       - '.gitignore'
-      - 'CODEOWNERS'
+      - '../CODEOWNERS'
       - 'LICENSE'
 env:
   GOARCH: amd64
@@ -129,11 +129,11 @@ jobs:
       -
         name: Install Kuberlr-Kubectl
         run: ./.github/workflows/e2e/scripts/install-ci-chart.sh;
-      - 
+      -
         name: Check if Kuberlr-Kubectl is up
         run: ./.github/workflows/e2e/scripts/validate-ci-chart.sh;
 
-      - 
+      -
         name: Uninstall Kuberlr-Kubectl
         run: ./.github/workflows/e2e/scripts/uninstall-ci-chart.sh;
       - name: Generate artifacts on failure
@@ -146,7 +146,7 @@ jobs:
           name: artifacts-${{ matrix.arch }}-${{ inputs.k3s_version || env.K3S_MIN_VERSION_TAG }}
           path: artifacts/
           retention-days: 1
-      - 
+      -
         name: Delete k3d cluster
         if: always()
         run: k3d cluster delete $CLUSTER_NAME
