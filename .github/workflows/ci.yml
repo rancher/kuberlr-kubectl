@@ -12,14 +12,14 @@ on:
       - 'docs/**'
       - '*.md'
       - '.gitignore'
-      - 'CODEOWNERS'
+      - '../CODEOWNERS'
       - 'LICENSE'
   pull_request:
     paths-ignore:
       - 'docs/**'
       - '*.md'
       - '.gitignore'
-      - 'CODEOWNERS'
+      - '../CODEOWNERS'
       - 'LICENSE'
 
 concurrency:
