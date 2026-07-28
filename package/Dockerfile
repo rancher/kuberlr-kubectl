@@ -1,4 +1,4 @@
-ARG BCI_VERSION=16.0
+ARG BCI_VERSION=16.1
 ARG GO_IMAGE=rancher/hardened-build-base:v1.26.4b1
 
 # xx provides cross-compilation helpers so the builder always runs on the build
