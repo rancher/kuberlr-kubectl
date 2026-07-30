@@ -1,0 +1,123 @@
+name: Stable Image Releases
+
+on:
+  workflow_call:
+
+# GitHub settings / example values:
+#
+# org level vars:
+#   - PUBLIC_REGISTRY: docker.io
+# repo level vars:
+#   - PUBLIC_REGISTRY_REPO: rancher
+# repo level secrets:
+#   - PUBLIC_REGISTRY_USERNAME
+#   - PUBLIC_REGISTRY_PASSWORD
+
+env:
+  PUBLIC_REGISTRY: docker.io
+  REPO: rancher
+
+jobs:
+
+  publish-public:
+    permissions:
+      contents: write
+      # write is needed for:
+      # - OIDC for cosign's use in ecm-distro-tools/publish-image.
+      # - Read vault secrets in rancher-eio/read-vault-secrets.
+      id-token: write
+      packages: write
+      attestations: write
+
+    runs-on: runs-on,runner=2cpu-linux-x64,run-id=${{ github.run_id }}
+
+    steps:
+      -
+        # Add support for more platforms with QEMU (optional)
+        # https://github.com/docker/setup-qemu-action
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
+      - name: Check out repository code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name : Make test helm chart
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: TAG=$TAG_NAME make package-helm
+      - name: Add test helm chart to release
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${TAG_NAME}" "./build/charts/rancher-kubectl-test-${TAG_NAME#v}.tgz"
+
+      - name: Load Secrets from Vault
+        uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
+        with:
+          secrets: |
+            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials registry | PRIME_STG_REGISTRY ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials username | PRIME_STG_REGISTRY_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password | PRIME_STG_REGISTRY_PASSWORD ;
+
+      - name: Build and push kuberlr-kubectl image (dockerhub and prime stg)
+        uses: rancher/ecm-distro-tools/actions/publish-image@03cb52c4bd23670a192d47ef7b49d566928738d6 # v0.72.0
+        with:
+          image: ${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
+          tag: ${{ github.ref_name }}
+
+          public-registry: ${{ env.PUBLIC_REGISTRY }}
+          public-repo: ${{ vars.REPO || env.REPO || github.repository_owner }}
+          public-username: ${{ env.DOCKER_USERNAME || vars.DOCKER_USERNAME || github.repository_owner }}
+          public-password: ${{ env.DOCKER_PASSWORD || secrets.DOCKER_PASSWORD }}
+
+          push-to-prime: true
+          prime-registry: ${{ env.PRIME_STG_REGISTRY }}
+          prime-repo: rancher
+          prime-username: ${{ env.PRIME_STG_REGISTRY_USERNAME }}
+          prime-password: ${{ env.PRIME_STG_REGISTRY_PASSWORD }}
+
+      - name: Check SemVer Characteristics
+        id: semver_check
+        run: bash ./.github/scripts/check-semver "${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Load Secrets from Vault
+        if: ${{ steps.semver_check.outputs.HAS_PRERELEASE == 'false' }}
+        uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
+        with:
+          secrets: |
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry | PRIME_REGISTRY ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username | PRIME_REGISTRY_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password | PRIME_REGISTRY_PASSWORD ;
+
+      - name: Build and push kuberlr-kubectl image (prime prod)
+        if: ${{ steps.semver_check.outputs.HAS_PRERELEASE == 'false' }}
+        uses: rancher/ecm-distro-tools/actions/publish-image@03cb52c4bd23670a192d47ef7b49d566928738d6 # v0.72.0
+        with:
+          image: ${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
+          tag: ${{ github.ref_name }}
+
+          push-to-public: false
+
+          push-to-prime: true
+          prime-registry: ${{ env.PRIME_REGISTRY }}
+          prime-repo: rancher
+          prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
+          prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
+
+  retag:
+    permissions:
+      packages: write
+    runs-on: ubuntu-latest
+    needs: publish-public
+    container:
+      image: ghcr.io/rancher/ci-image/charts:latest
+    steps:
+      - name: Re-tag the image to ghcr.io/${{ github.repository_owner }}
+        env:
+          FULL_IMAGE_URL: ${{ env.PUBLIC_REGISTRY }}/${{ vars.REPO || github.repository_owner }}/${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
+          FULL_IMAGE_GHCR_URL: ghcr.io/${{ github.repository_owner }}/${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u ${{ github.actor }} --password-stdin
+          oras copy ${{ env.FULL_IMAGE_URL }}:${{ github.ref_name }} ${{ env.FULL_IMAGE_GHCR_URL }}:${{ github.ref_name }}
