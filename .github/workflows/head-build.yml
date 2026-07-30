@@ -6,85 +6,12 @@ on:
       - main
       - release/v[0-9]+.x
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions:
-  contents: write # Upload artefacts to release.
-
-env:
-  PUBLIC_REGISTRY: ghcr.io
+  contents: write
+  id-token: write
+  packages: write
+  attestations: write
 
 jobs:
-  prebuild-env:
-    name: Prebuild needed Env vars
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the repository to the runner
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - name: Set Branch Tag and Other Variables
-        id: set-vars
-        run: bash ./.github/scripts/branch-tags.sh >> $GITHUB_OUTPUT
-    outputs:
-      branch_tag: ${{ steps.set-vars.outputs.branch_tag }}
-      branch_static_tag: ${{ steps.set-vars.outputs.branch_static_tag }}
-      prev_tag: ${{ steps.set-vars.outputs.prev_tag }}
-
-  publish-public:
-    permissions:
-      contents: read
-      # write is needed for:
-      # - OIDC for cosign's use in ecm-distro-tools/publish-image.
-      # - Read vault secrets in rancher-eio/read-vault-secrets.
-      # - Publish image to ghcr.io
-      id-token: write
-      packages: write
-      attestations: write
-
-    runs-on: ubuntu-latest
-    needs:
-      - prebuild-env
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Load Secrets from Vault
-        uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
-        with:
-          secrets: |
-            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
-            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD ;
-
-      - name: Build and push all image variations
-        uses: rancher/ecm-distro-tools/actions/publish-image@575bb831c67edd950bfedb59d41dd127bd0005d6 # v0.65.2
-        with:
-          image: ${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
-          tag: ${{ needs.prebuild-env.outputs.branch_static_tag }}
-          platforms: "linux/amd64,linux/arm64"
-
-          public-registry: ${{ env.PUBLIC_REGISTRY }}
-          public-repo: ${{ vars.REPO || github.repository_owner }}
-          public-username: ${{ github.actor }}
-          public-password: ${{ secrets.GITHUB_TOKEN }}
-
-          push-to-prime: false
-
-  retag:
-    permissions:
-      packages: write
-    runs-on: ubuntu-latest
-    needs:
-      - prebuild-env
-      - publish-public
-    container:
-      image: ghcr.io/rancher/ci-image/charts:latest
-    steps:
-      - name: Re-tag the static head image using the rolling tag
-        env:
-          FULL_IMAGE_URL: ${{ env.PUBLIC_REGISTRY }}/${{ vars.REPO || github.repository_owner }}/${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
-          STATIC_TAG: ${{ needs.prebuild-env.outputs.branch_static_tag }}
-          LATEST_TAG: ${{ needs.prebuild-env.outputs.branch_tag }}
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u ${{ github.actor }} --password-stdin
-          oras copy ${{ env.FULL_IMAGE_URL }}:${{ env.STATIC_TAG }} ${{ env.FULL_IMAGE_URL }}:${{ env.LATEST_TAG }}
+  build:
+    uses: rancher/kuberlr-kubectl/.github/workflows/head-build.yml@automation-core
