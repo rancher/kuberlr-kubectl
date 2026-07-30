@@ -1,7 +1,6 @@
 name: CI tests
 
 on:
-  workflow_call:
   push:
     branches:
       - main
@@ -22,39 +21,12 @@ on:
       - 'CODEOWNERS'
       - 'LICENSE'
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  PUBLIC_REGISTRY: ghcr.io
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+  attestations: write
 
 jobs:
   ci:
-    permissions:
-      contents: write  # Upload artefacts to release.
-      # write is needed for:
-      # - OIDC for cosign's use in ecm-distro-tools/publish-image.
-      # - Read vault secrets in rancher-eio/read-vault-secrets.
-      id-token: write
-      packages: write
-      attestations: write
-    runs-on: runs-on,runner=2cpu-linux-x64,run-id=${{ github.run_id }}
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      -
-        # Add support for more platforms with QEMU (optional)
-        # https://github.com/docker/setup-qemu-action
-        name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
-
-      - name: Basic CI
-        run: make ci
-      - name: Upload CI files to artifacts (on failure)
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        if: failure()
-        with:
-          path: 'ci'
-          retention-days: 7
+    uses: rancher/kuberlr-kubectl/.github/workflows/ci.yml@automation-core
