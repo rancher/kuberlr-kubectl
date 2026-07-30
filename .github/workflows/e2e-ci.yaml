@@ -2,34 +2,17 @@ name: "E2E CI"
 
 on:
   workflow_call:
-  workflow_dispatch:
     inputs:
       debug:
         description: "Enable debug logs"
         required: false
+        type: string
         default: "false"
       k3s_version:
         description: "Version of k3s to use for the underlying cluster, should exist in https://hub.docker.com/r/rancher/k3s/tags"
         required: false
-  pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - '.gitignore'
-      - '../CODEOWNERS'
-      - 'LICENSE'
-      - 'Makefile'
-  push:
-    branches:
-      - main
-      - release/v[0-9]+.x
-      - release/v[0-9]+.[0-9]+.[0-9]+
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - '.gitignore'
-      - '../CODEOWNERS'
-      - 'LICENSE'
+        type: string
+
 env:
   GOARCH: amd64
   CGO_ENABLED: 0
@@ -39,7 +22,7 @@ env:
   APISERVER_PORT: 8001
   DEFAULT_SLEEP_TIMEOUT_SECONDS: 10
   KUBECTL_WAIT_TIMEOUT: 300s
-  DEBUG: ${{ github.event.inputs.debug || false }}
+  DEBUG: ${{ inputs.debug || false }}
   CLUSTER_NAME: 'e2e-ci-kuberlr-kubectl'
   YQ_VERSION: v4.44.3
   YQ_CHECKSUM_AMD64: 'a2c097180dd884a8d50c956ee16a9cec070f30a7947cf4ebf87d5f36213e9ed7'
