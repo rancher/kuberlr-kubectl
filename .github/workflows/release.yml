@@ -1,9 +1,7 @@
 name: Stable Image Releases
 
 on:
-  push:
-    tags:
-      - '*'
+  workflow_call:
 
 # GitHub settings / example values:
 #
