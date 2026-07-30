@@ -4,6 +4,7 @@
   ],
   "baseBranchPatterns": [
     "main",
+    "automation-core",
     "release/v7.x",
     "release/v6.x",
     "release/v5.x",
