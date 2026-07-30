@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+
+# Function to record a test result
+record_test_result() {
+    TEST_COUNT=$((TEST_COUNT + 1))
+    local test_name="$1"
+    local success="$2" # true or false
+    local optional_message="$3" # The optional message
+
+    if [[ "$success" == "true" ]]; then
+        echo "  ✅ Assertion PASS: ${test_name}"
+    else
+        echo "  ❌ Assertion FAIL: ${test_name}"
+        if [[ -n "$optional_message" ]]; then # Check if message is not empty
+            echo "    Info: ${optional_message}"
+        fi
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
+}
+
+# Assertion: Check if a file exists
+# Usage: assert_file_exists "file_path" [optional_message]
+assert_file_exists() {
+    local file_path="$1"
+    local test_name="File exists: ${file_path}"
+    local optional_message="$2" # Capture the optional message
+
+    if [[ -f "${file_path}" ]]; then
+        record_test_result "${test_name}" "true" "$optional_message"
+        return 0 # Success
+    else
+        record_test_result "${test_name}" "false" "$optional_message"
+        return 1 # Failure
+    fi
+}
+
+# Assertion: Check if a file does NOT exist
+# Usage: assert_file_not_exists "file_path" [optional_message]
+assert_file_not_exists() {
+    local file_path="$1"
+    local test_name="File does not exist: ${file_path}"
+    local optional_message="$2" # Capture the optional message
+
+    if [[ ! -f "${file_path}" ]]; then
+        record_test_result "${test_name}" "true" "$optional_message"
+        return 0 # Success
+    else
+        record_test_result "${test_name}" "false" "$optional_message"
+        return 1 # Failure
+    fi
+}
+
+# Assertion: Check if a directory exists
+# Usage: assert_dir_exists "dir_path" [optional_message]
+assert_dir_exists() {
+    local dir_path="$1"
+    local test_name="Directory exists: ${dir_path}"
+    local optional_message="$2" # Capture the optional message
+
+    if [[ -d "${dir_path}" ]]; then
+        record_test_result "${test_name}" "true" "$optional_message"
+        return 0 # Success
+    else
+        record_test_result "${test_name}" "false" "$optional_message"
+        return 1 # Failure
+    fi
+}
+
+# Assertion: Run a command and check its exit status
+# Usage: assert_command_success "command string" [optional_message]
+assert_command_success() {
+    local command_to_run="$1" # Takes the first argument as the command string
+    local optional_message="$2" # The second argument is the optional message
+    local test_name="Command '${command_to_run}' succeeds"
+
+    # Execute the command and capture its exit status
+    if eval "${command_to_run}" > /dev/null 2>&1; then
+        record_test_result "${test_name}" "true" "$optional_message"
+        return 0 # Success
+    else
+        record_test_result "${test_name}" "false" "$optional_message"
+        return 1 # Failure
+    fi
+}
+
+# Assertion: Run a command and check for a non-zero exit status (failure)
+# Usage: assert_command_failure "command string" [optional_message]
+assert_command_failure() {
+    local command_to_run="$1" # Takes the first argument as the command string
+    local optional_message="$2" # The second argument is the optional message
+    local test_name="Command '${command_to_run}' fails"
+
+    # Execute the command and capture its exit status
+    if ! eval "${command_to_run}" > /dev/null 2>&1; then
+        record_test_result "${test_name}" "true" "$optional_message"
+        return 0 # Success
+    else
+        record_test_result "${test_name}" "false" "$optional_message"
+        return 1 # Failure
+    fi
+}

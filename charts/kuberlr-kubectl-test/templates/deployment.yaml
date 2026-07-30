@@ -1,0 +1,64 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kuberlr-kubectl-shell
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app:  kuberlr-kubectl-shell
+  template:
+    metadata:
+      labels:
+        app:  kuberlr-kubectl-shell
+    spec:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      containers:
+        - name:  kuberlr-kubectl-shell-container
+          image: {{ template "kubectl.image" . }}
+          imagePullPolicy: {{ .Values.global.kubectl.image.pullPolicy | default "Always" }}
+          command: ["/bin/bash", "-c", "sleep infinity"] # This keeps the container running
+          {{- if and .Values.global.kubectl (hasKey .Values.global.kubectl "kuberlrAllowDownload") }}
+          env:
+            - name: KUBERLR_ALLOWDOWNLOAD
+              value: {{ default .Values.global.kubectl.kuberlrAllowDownload false }}
+          {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kuberlr-kubectl-action
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app:  kuberlr-kubectl-action
+  template:
+    metadata:
+      labels:
+        app:  kuberlr-kubectl-action
+    spec:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      containers:
+        - name:  kuberlr-kubectl-action-container
+          image: {{ template "kubectl.image" . }}
+          imagePullPolicy: {{ .Values.global.kubectl.image.pullPolicy | default "Always" }}
+          command: ["/bin/bash", "-c", "
+            set -e
+            echo 'Check kuberlr bins...' &&
+            kuberlr bins &&
+            echo \"kubectl bin linked at: `which kubectl`\" &&
+            ls -lah `which kubectl` &&
+            echo 'Starting main loop...' &&
+            sleep infinity
+          "] # This keeps the container running
+          {{- if and .Values.global.kubectl (hasKey .Values.global.kubectl "kuberlrAllowDownload") }}
+          env:
+            - name: KUBERLR_ALLOWDOWNLOAD
+              value: {{ default .Values.global.kubectl.kuberlrAllowDownload false }}
+          {{- end }}

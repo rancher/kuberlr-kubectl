@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+
+set -e
+
+function header() {
+  local text="$1"
+  local width=53  # Adjust this for desired total width
+  local padding=$(( (width - ${#text}) / 2 ))  # Calculate padding for centering
+
+  printf '%*s\n' "$width" | tr ' ' '-'
+  printf '%*s%s%*s\n' "$padding" "" "$text" "$padding" ""
+  printf '%*s\n' "$width" | tr ' ' '-'
+}
+
+function error() {
+  local text="$1"
+  local width=53  # Adjust this for desired total width
+  local padding=$(( (width - ${#text}) / 2 ))  # Calculate padding for centering
+
+  # ANSI escape codes for styling
+  local RED_BOLD='\033[1;31m' # Bold Red text
+  local RESET='\033[0m'      # Reset text formatting
+
+  # Print the error message in red and bold
+  echo -e "${RED_BOLD}"
+  printf '%*s\n' "$width" | tr ' ' '-'
+  printf '%*s%s%*s\n' "$padding" "" "$text" "$padding" ""
+  printf '%*s\n' "$width" | tr ' ' '-'
+  echo -e "${RESET}"
+}
+
+function expectedArch() {
+  IMAGE_ARCH=$1
+  case $IMAGE_ARCH in
+    amd64)
+      echo "x86-64"
+      ;;
+    arm64)
+      echo "aarch64"
+      ;;
+    *)
+      echo "UNKNOWN-ARCH"
+      ;;
+  esac
+}
+
+function verifyKuberlrKubectl() {
+  # Loop through each architecture
+  for ARCH in $ARCHES; do
+      EXPECTED_BIN_ARCH=$(expectedArch "$ARCH")
+      ARCH_DIR="$WORKDIR/$ARCH"
+      mkdir -p "$ARCH_DIR"
+
+      header "Processing architecture: $ARCH"
+
+      # Pull and extract files
+      CONTAINER_ID=$(docker create --platform linux/$ARCH "$IMAGE")
+      docker cp "$CONTAINER_ID:/bin/kuberlr" "$ARCH_DIR/kuberlr" 2>&1 > /dev/null || echo "kuberlr not found in $IMAGE for $ARCH"
+      KUBECTL_LIST=$(docker run --rm --entrypoint sh "$IMAGE" -c "ls /usr/bin | grep kube")
+      for KUBECTL_VER in $KUBECTL_LIST; do
+        docker cp "$CONTAINER_ID:/usr/bin/$KUBECTL_VER" "$ARCH_DIR/$KUBECTL_VER" 2>&1 > /dev/null || echo "kubectl ($KUBECTL_VER) not found in $IMAGE for $ARCH"
+      done
+      docker rm "$CONTAINER_ID" 2>&1 > /dev/null
+
+      header "$ARCH - kuberlr BINs"
+      # Verify architecture
+      if [[ -f "$ARCH_DIR/kuberlr" ]]; then
+          FILE_INFO=$(file "$ARCH_DIR/kuberlr")
+          echo -n "kuberlr info:";
+          echo "$FILE_INFO"
+          if [[ "$FILE_INFO" == *"$EXPECTED_BIN_ARCH"* ]]; then
+            echo "Bin is expected arch"
+          else
+            error "ERROR - Bin NOT expected arch"
+            echo "Expected: $EXPECTED_BIN_ARCH"
+            exit 1
+          fi
+      fi
+      header "$ARCH - Kubectl BINs"
+      for KUBECTL_VER in $KUBECTL_LIST; do
+        if [[ -f "$ARCH_DIR/$KUBECTL_VER" ]]; then
+            FILE_INFO=$(file "$ARCH_DIR/$KUBECTL_VER")
+            echo -n "kuberlr($KUBECTL_VER) info:";
+            echo "$FILE_INFO"
+            if [[ "$FILE_INFO" == *"$EXPECTED_BIN_ARCH"* ]]; then
+              echo "Bin is expected arch"
+            else
+              error "ERROR - Bin NOT expected arch"
+              echo "Expected: $EXPECTED_BIN_ARCH"
+              exit 1
+            fi
+        fi
+      done
+
+      echo "Done processing $ARCH."
+  done
+}
+
+# Ensure required commands are available
+for cmd in docker jq file; do
+    if ! command -v $cmd &>/dev/null; then
+        echo "Error: $cmd is not installed." >&2
+        exit 1
+    fi
+done
+
+# Check if the user provided an image name and tag
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <image_name:tag>"
+    echo "This script is used to help verify the contents of `rancher/kuberlr-kubectl` and `flavior/kuberlr` images."
+    echo "This script will verify:"
+    echo "  1. The architectures of a mult-arch image,"
+    echo "  2. The architecture of the image's required binaries (`kuberlr` and `kubectl`)."
+    exit 1
+fi
+
+IMAGE="$1"
+
+# Create a working directory
+WORKDIR="./image_arch_test"
+mkdir -p "$WORKDIR"
+
+# Fetch architectures using docker buildx imagetools
+echo "Fetching architectures for $IMAGE..."
+ARCHES=$(docker buildx imagetools inspect "$IMAGE" --format '{{json .Manifest.Manifests}}' | jq -r '.[].platform.architecture'|sort|uniq|grep -v unknown)
+
+if [ -z "$ARCHES" ]; then
+    echo "Failed to fetch architectures. Is the image multi-arch?"
+    exit 1
+fi
+
+SINGLE_LINE_ARCH=$(echo "${ARCHES}" | tr '\n' ','|sed 's/,$//')
+echo "Architectures found: $SINGLE_LINE_ARCH"
+if [[ "$IMAGE" == */kuberlr:* ]]; then
+      # Loop through each architecture
+      for ARCH in $ARCHES; do
+          EXPECTED_BIN_ARCH=$(expectedArch "$ARCH")
+          ARCH_DIR="$WORKDIR/$ARCH"
+          mkdir -p "$ARCH_DIR"
+
+          header "Processing architecture: $ARCH"
+
+          # Pull and extract files
+          CONTAINER_ID=$(docker create --platform linux/$ARCH "$IMAGE")
+          docker cp "$CONTAINER_ID:/bin/kuberlr" "$ARCH_DIR/kuberlr" 2>&1 > /dev/null || echo "kuberlr not found in $IMAGE for $ARCH"
+          docker rm "$CONTAINER_ID" 2>&1 > /dev/null
+
+          header "$ARCH - kuberlr BINs"
+          # Verify architecture
+          if [[ -f "$ARCH_DIR/kuberlr" ]]; then
+              FILE_INFO=$(file "$ARCH_DIR/kuberlr")
+              echo -n "kuberlr info:";
+              echo "$FILE_INFO"
+              if [[ "$FILE_INFO" == *"$EXPECTED_BIN_ARCH"* ]]; then
+                echo "Bin is expected arch"
+              else
+                error "ERROR - Bin NOT expected arch"
+                echo "Expected: $EXPECTED_BIN_ARCH for $ARCH"
+                exit 1
+              fi
+          fi
+
+          echo "Done processing $ARCH."
+      done
+else
+  verifyKuberlrKubectl;
+fi
+
+rm -rf "$WORKDIR"
+
+echo "All architectures processed."

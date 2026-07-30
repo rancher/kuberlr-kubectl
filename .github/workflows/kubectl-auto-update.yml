@@ -1,0 +1,30 @@
+name: "Kubectl - Auto-Updates"
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 1 * * 0,3'
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+jobs:
+  branch-update-checks:
+    permissions:
+      contents: write
+      pull-requests: write
+    strategy:
+      matrix:
+        target_branch:
+          - main
+          - release/v3.x
+          - release/v4.x
+          - release/v5.x
+          - release/v6.x
+          - release/v7.x
+    uses: ./.github/workflows/kubectl-create-bump-pr.yml
+    with:
+      target_branch: ${{ matrix.target_branch }}
+      script_ref: ${{ github.sha }}
