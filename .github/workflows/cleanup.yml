@@ -1,8 +1,7 @@
 name: Clean PR Branch
 
 on:
-  pull_request:
-    types: [closed]
+  workflow_call:
 
 jobs:
   cleanup:
