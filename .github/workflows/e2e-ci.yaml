@@ -1,7 +1,6 @@
 name: "E2E CI"
 
 on:
-  workflow_call:
   workflow_dispatch:
     inputs:
       debug:
@@ -30,123 +29,16 @@ on:
       - '.gitignore'
       - '../CODEOWNERS'
       - 'LICENSE'
-env:
-  GOARCH: amd64
-  CGO_ENABLED: 0
-  SETUP_GO_VERSION: '^1.20'
-  E2E_CI: true
-  REPO: rancher
-  APISERVER_PORT: 8001
-  DEFAULT_SLEEP_TIMEOUT_SECONDS: 10
-  KUBECTL_WAIT_TIMEOUT: 300s
-  DEBUG: ${{ github.event.inputs.debug || false }}
-  CLUSTER_NAME: 'e2e-ci-kuberlr-kubectl'
-  YQ_VERSION: v4.44.3
-  YQ_CHECKSUM_AMD64: 'a2c097180dd884a8d50c956ee16a9cec070f30a7947cf4ebf87d5f36213e9ed7'
-  YQ_CHECKSUM_ARM64: '0e7e1524f68d91b3ff9b089872d185940ab0fa020a5a9052046ef10547023156'
+
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+  attestations: write
 
 jobs:
-  e2e-kuberlr-kubectl:
-    permissions:
-      contents: write  # Upload artefacts to release.
-      # write is needed for:
-      # - OIDC for cosign's use in ecm-distro-tools/publish-image.
-      # - Read vault secrets in rancher-eio/read-vault-secrets.
-      id-token: write
-      packages: write
-      attestations: write
-    strategy:
-      matrix:
-        arch:
-          - x64
-          - arm64
-    runs-on: ${{ github.repository == 'rancher/kuberlr-kubectl' && format('runs-on,image=ubuntu22-full-{1},runner=4cpu-linux-{1},run-id={0}', github.run_id, matrix.arch) || 'ubuntu-latest' }}
-    steps:
-      -
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          fetch-depth: 0
-
-      -
-        # Add support for more platforms with QEMU (optional)
-        # https://github.com/docker/setup-qemu-action
-        name: Set up QEMU
-        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
-      - uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
-      - name : Install helm
-        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check if yq is installed
-        id: check_yq
-        run: |
-          if ! command -v yq &> /dev/null; then
-            echo "yq not found, installing..."
-            echo "::set-output name=install_yq::true"
-          else
-            echo "yq is already installed"
-            echo "::set-output name=install_yq::false"
-          fi
-      - name : Install YQ
-        if: steps.check_yq.outputs.install_yq == 'true'
-        run: |
-          sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${{ matrix.arch == 'x64' && 'amd64' || matrix.arch  }} -O /usr/bin/yq
-          if [ "${{ matrix.arch }}" = "x64" ]; then echo "${YQ_CHECKSUM_AMD64}  /usr/bin/yq" | sha256sum -c - ; fi
-          if [ "${{ matrix.arch }}" = "arm64" ]; then echo "${YQ_CHECKSUM_ARM64}  /usr/bin/yq" | sha256sum -c - ; fi
-          sudo chmod +x /usr/bin/yq
-      - name : Export image version
-        run : |
-          source ./scripts/version
-          echo REPO=$REPO >> $GITHUB_ENV
-          echo IMAGE=$IMAGE >> $GITHUB_ENV
-          echo TAG=$TAG >> $GITHUB_ENV
-          echo FULL_IMAGE=$FULL_IMAGE >> $GITHUB_ENV
-
-      - name: Set K3S Min/Max Versions
-        run: bash ./scripts/k3s-version >> $GITHUB_ENV
-      - name: Set K3S_VERSION
-        run: echo "K3S_VERSION=${{ inputs.k3s_version || env.K3S_MIN_VERSION_TAG }}" >> $GITHUB_ENV
-
-      -
-        name: Perform pre-e2e image build
-        run: |
-          make package;
-          make package-helm;
-      - uses: rancherlabs/dep-fetch/actions/sync-deps@56731ed2727325212f71f7682013dc71c18540e1 # v0.1.1
-        with:
-          version: v0.1.1
-      -
-        name : Setup k3d cluster
-        run : ./.github/workflows/e2e/scripts/setup-cluster.sh
-      -
-        name: Import Images Into k3d
-        run: |
-          k3d image import ${FULL_IMAGE} -c $CLUSTER_NAME;
-      -
-        name: Setup kubectl context
-        run: |
-          kubectl config use-context "k3d-$CLUSTER_NAME";
-      -
-        name: Install Kuberlr-Kubectl
-        run: ./.github/workflows/e2e/scripts/install-ci-chart.sh;
-      -
-        name: Check if Kuberlr-Kubectl is up
-        run: ./.github/workflows/e2e/scripts/validate-ci-chart.sh;
-
-      -
-        name: Uninstall Kuberlr-Kubectl
-        run: ./.github/workflows/e2e/scripts/uninstall-ci-chart.sh;
-      - name: Generate artifacts on failure
-        if: failure()
-        run: ./.github/workflows/e2e/scripts/generate-artifacts.sh;
-      - name: Upload logs and manifests on failure
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: artifacts-${{ matrix.arch }}-${{ inputs.k3s_version || env.K3S_MIN_VERSION_TAG }}
-          path: artifacts/
-          retention-days: 1
-      -
-        name: Delete k3d cluster
-        if: always()
-        run: k3d cluster delete $CLUSTER_NAME
+  e2e:
+    uses: rancher/kuberlr-kubectl/.github/workflows/e2e-ci.yaml@automation-core
+    with:
+      debug: ${{ inputs.debug }}
+      k3s_version: ${{ inputs.k3s_version }}
