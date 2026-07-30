@@ -2,25 +2,6 @@ name: CI tests
 
 on:
   workflow_call:
-  push:
-    branches:
-      - main
-      - release/v[0-9]+.(0|x)
-      - release/v[0-9]+.[0-9]+.(0|x)
-      - release/v[0-9]+.[0-9]+.[0-9]+
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - '.gitignore'
-      - '../CODEOWNERS'
-      - 'LICENSE'
-  pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - '.gitignore'
-      - '../CODEOWNERS'
-      - 'LICENSE'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
