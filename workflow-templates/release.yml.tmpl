@@ -1,7 +1,9 @@
 name: Stable Image Releases
 
 on:
-  workflow_call:
+  push:
+    tags:
+      - '*'
 
 # GitHub settings / example values:
 #
@@ -80,7 +82,9 @@ jobs:
 
       - name: Check SemVer Characteristics
         id: semver_check
-        run: bash ./.github/scripts/check-semver "${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+        uses: rancher/kuberlr-kubectl/.github/actions/check-semver{{AUTOMATION_CORE_REF}}
+        with:
+          tag: ${{ github.ref_name }}
 
       - name: Load Secrets from Vault
         if: ${{ steps.semver_check.outputs.HAS_PRERELEASE == 'false' }}
