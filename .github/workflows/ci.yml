@@ -3,19 +3,10 @@ name: CI tests
 on:
   workflow_call:
 
-env:
-  PUBLIC_REGISTRY: ghcr.io
-
 jobs:
   ci:
     permissions:
-      contents: write  # Upload artefacts to release.
-      # write is needed for:
-      # - OIDC for cosign's use in ecm-distro-tools/publish-image.
-      # - Read vault secrets in rancher-eio/read-vault-secrets.
-      id-token: write
-      packages: write
-      attestations: write
+      contents: read
     runs-on: runs-on,runner=2cpu-linux-x64,run-id=${{ github.run_id }}
     steps:
       - name: Check out repository code

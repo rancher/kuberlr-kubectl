@@ -1,0 +1,9 @@
+name: Clean PR Branch
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    uses: rancher/kuberlr-kubectl/.github/workflows/cleanup.yml{{AUTOMATION_CORE_REF}}
