@@ -1,7 +1,14 @@
 name: Branch head Prerelease Images
 
 on:
-  workflow_call:
+  push:
+    branches:
+      - main
+      - release/v[0-9]+.x
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write # Upload artefacts to release.
@@ -18,11 +25,11 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Set Branch Tag and Other Variables
         id: set-vars
-        run: bash ./.github/scripts/branch-tags.sh >> $GITHUB_OUTPUT
+        uses: rancher/kuberlr-kubectl/.github/actions/compute-branch-tags{{AUTOMATION_CORE_REF}}
     outputs:
       branch_tag: ${{ steps.set-vars.outputs.branch_tag }}
       branch_static_tag: ${{ steps.set-vars.outputs.branch_static_tag }}
-      prev_tag: ${{ steps.set-vars.outputs.prev_tag }}
+      prev_tag: ${{ steps.set-vars.outputs.prev_static_tag }}
 
   publish-public:
     permissions:
@@ -49,6 +56,10 @@ jobs:
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD ;
 
+      # SLSA attestation stays on the release branch (OIDC binding requirement):
+      # this step's cosign sign/attest calls are bound to the identity of
+      # whichever workflow file runs this job, so this job cannot be
+      # delegated to a reusable workflow on automation-core.
       - name: Build and push all image variations
         uses: rancher/ecm-distro-tools/actions/publish-image@03cb52c4bd23670a192d47ef7b49d566928738d6 # v0.72.0
         with:
