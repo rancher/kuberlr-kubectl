@@ -1,0 +1,104 @@
+name: Deploy Workflows
+
+on:
+  workflow_dispatch:
+    inputs:
+      targetBranch:
+        description: "The branch to deploy workflows to (e.g., 'main', 'release/v7.x')"
+        required: true
+        type: string
+      automationCoreRef:
+        description: "Automation-core ref to pin the deployed workflows to (default: 'automation-core', or a tag like 'v1')"
+        required: false
+        default: "automation-core"
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout automation-core
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: false
+          path: automation-core
+
+      - name: Checkout target branch
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ inputs.targetBranch }}
+          persist-credentials: false
+          path: target-repo
+
+      - name: Create branch, apply templates, and create PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_BRANCH: ${{ inputs.targetBranch }}
+          AUTOMATION_CORE_REF: ${{ inputs.automationCoreRef }}
+        run: |
+          set -euo pipefail
+
+          DEPLOY_BRANCH="deploy-workflows-$(date +%Y-%m-%d-%H-%M-%S)"
+
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+          # Render every template into a staging dir, stripping the .tmpl suffix
+          STAGING_DIR=$(mktemp -d)
+
+          for tmpl in automation-core/workflow-templates/*.tmpl; do
+            out="${STAGING_DIR}/$(basename "${tmpl%.tmpl}")"
+            sed -e "s|{{AUTOMATION_CORE_REF}}|@${AUTOMATION_CORE_REF}|g" "${tmpl}" > "${out}"
+          done
+
+          echo "Validating generated workflow files..."
+          for workflow in "${STAGING_DIR}"/*; do
+            echo "  Validating $(basename "$workflow")..."
+            yq eval '.' "$workflow" > /dev/null || {
+              echo "ERROR: Invalid YAML in $(basename "$workflow")"
+              exit 1
+            }
+          done
+          echo "All workflow files are valid YAML"
+
+          cd target-repo
+          git checkout -b "${DEPLOY_BRANCH}"
+
+          mkdir -p .github/workflows
+          cp "${STAGING_DIR}"/* .github/workflows/
+          git add .github/workflows/
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit - workflows are already up to date"
+            exit 0
+          fi
+
+          bash ../automation-core/.github/scripts/generate-commit-msg.sh \
+            "${TARGET_BRANCH}" "${AUTOMATION_CORE_REF}" "${GITHUB_SHA}" > /tmp/commit_msg
+
+          git commit -F /tmp/commit_msg
+          git push origin "${DEPLOY_BRANCH}"
+
+          bash ../automation-core/.github/scripts/generate-pr-body.sh \
+            "${TARGET_BRANCH}" "${AUTOMATION_CORE_REF}" "${GITHUB_SHA}" "${GITHUB_ACTOR}" > /tmp/pr_body
+
+          CREATED_PR=$(gh pr create \
+            -R "${{ github.repository }}" \
+            --title "Deploy automation-core workflows to ${TARGET_BRANCH}" \
+            --body-file /tmp/pr_body \
+            --base "${TARGET_BRANCH}" \
+            --head "${DEPLOY_BRANCH}")
+
+          {
+            echo "## Deployment Summary"
+            echo ""
+            echo "**Target branch**: \`${TARGET_BRANCH}\`"
+            echo "**Automation-core ref**: \`@${AUTOMATION_CORE_REF}\`"
+            echo ""
+            echo "**Created PR**: ${CREATED_PR}"
+          } >> "$GITHUB_STEP_SUMMARY"
