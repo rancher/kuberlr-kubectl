@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
         cd /build && rm -rf kubernetes-${version#v}; \
     done < kubectl-versions.txt
 
-FROM ghcr.io/flavio/kuberlr:v0.7.0 AS kuberlr
+FROM ghcr.io/flavio/kuberlr:v0.8.0 AS kuberlr
 FROM registry.suse.com/bci/bci-busybox:${BCI_VERSION} AS final
 FROM registry.suse.com/bci/bci-base:${BCI_VERSION} AS zypper
 
