@@ -5,6 +5,16 @@ on:
     tags:
       - '*'
 
+# GitHub settings / example values:
+#
+# org level vars:
+#   - PUBLIC_REGISTRY: docker.io
+# repo level vars:
+#   - PUBLIC_REGISTRY_REPO: rancher
+# repo level secrets:
+#   - PUBLIC_REGISTRY_USERNAME
+#   - PUBLIC_REGISTRY_PASSWORD
+
 env:
   PUBLIC_REGISTRY: docker.io
   REPO: rancher
