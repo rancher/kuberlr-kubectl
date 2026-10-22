@@ -61,7 +61,7 @@ jobs:
       # whichever workflow file runs this job, so this job cannot be
       # delegated to a reusable workflow on automation-core.
       - name: Build and push all image variations
-        uses: rancher/ecm-distro-tools/actions/publish-image@03cb52c4bd23670a192d47ef7b49d566928738d6 # v0.72.0
+        uses: rancher/ecm-distro-tools/actions/publish-image@de2813d6e83420b8146ce1f57de5ac6aad28c985 # v0.78.0
         with:
           image: ${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
           tag: ${{ needs.prebuild-env.outputs.branch_static_tag }}
