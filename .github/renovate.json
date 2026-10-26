@@ -8,9 +8,7 @@
     "release/v8.x",
     "release/v7.x",
     "release/v6.x",
-    "release/v5.x",
-    "release/v4.x",
-    "release/v3.x"
+    "release/v5.x"
   ],
   "prHourlyLimit": 24,
   "packageRules": [
