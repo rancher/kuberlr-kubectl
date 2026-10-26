@@ -8,14 +8,19 @@
 | release/v7.x        | v7.Y.Z        | 2.14.Z (release/v2.14) |
 | release/v6.x        | v6.Y.Z        | 2.13.Z (release/v2.13) |
 | release/v5.x        | v5.Y.Z        | 2.12.Z (release/v2.12) |
-| release/v4.x        | v4.Y.Z        | 2.11.Z (release/v2.11) |
-| release/v3.x        | v3.Y.Z        | 2.10.Z (release/v2.10) |
 
 ### Notes:
 - Each minor Rancher release will get a `rancher/kuberlr-kubectl` branch:
     - Each branch will get an image tag major to match it.
     - This gives us full "Y" and "Z" control on versioning the component to target Rancher minors.
     - E.x. Rancher 2.10.x releases will get varying versions of 3.Y.Z
+
+### EOL Versions
+
+| Branch              | Release Tag   | Rancher Tag (Branch)   |
+|---------------------|---------------|------------------------|
+| release/v4.x        | v4.Y.Z        | 2.11.Z (release/v2.11) |
+| release/v3.x        | v3.Y.Z        | 2.10.Z (release/v2.10) |
 
 ## Compatability
 
