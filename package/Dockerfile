@@ -1,39 +1,4 @@
 ARG BCI_VERSION=16.0
-ARG GO_IMAGE=rancher/hardened-build-base:v1.26.10b1
-
-# xx provides cross-compilation helpers so the builder always runs on the build
-# machine's native arch while targeting TARGETPLATFORM.
-FROM --platform=$BUILDPLATFORM rancher/mirrored-tonistiigi-xx:1.6.1 AS xx
-
-# Single stage builds all kubectl versions listed in kubectl-versions.txt.
-FROM --platform=$BUILDPLATFORM ${GO_IMAGE}  AS kubectl-builder
-COPY --from=xx / /
-ARG TARGETPLATFORM
-RUN xx-go --wrap
-
-WORKDIR /build
-COPY kubectl-versions.txt .
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    set -e && \
-    mkdir -p /kubectl-bins && \
-    while read -r version; do \
-        echo "==> Building kubectl ${version}"; \
-        curl -fsSL \
-            https://github.com/kubernetes/kubernetes/archive/refs/tags/${version}.tar.gz | \
-            tar -xz && \
-        cd kubernetes-${version#v} && \
-        KUBE_GIT_VERSION=${version} \
-        KUBE_GIT_COMMIT=unknown \
-        KUBE_GIT_TREE_STATE=clean \
-        KUBE_BUILD_PLATFORMS=$(xx-info os)/$(xx-info arch) \
-        GOFLAGS="-tags=providerless" \
-        CGO_ENABLED=0 \
-        make WHAT=cmd/kubectl && \
-        xx-verify --static _output/local/bin/$(xx-info os)/$(xx-info arch)/kubectl && \
-        cp _output/local/bin/$(xx-info os)/$(xx-info arch)/kubectl /kubectl-bins/kubectl${version#v} && \
-        cd /build && rm -rf kubernetes-${version#v}; \
-    done < kubectl-versions.txt
 
 FROM ghcr.io/flavio/kuberlr:v0.9.0 AS kuberlr
 FROM registry.suse.com/bci/bci-busybox:${BCI_VERSION} AS final
@@ -62,8 +27,14 @@ COPY --from=kuberlr /bin/kuberlr /chroot/bin/
 RUN cd /chroot/bin && ln -s ./kuberlr ./kubectl
 COPY --from=kuberlr /home/kuberlr /chroot/home/kuberlr
 
-# Copy all kubectl binaries built from source
-COPY --from=kubectl-builder /kubectl-bins/ /chroot/usr/bin/
+# Packages are named kubectl-<major>.<minor>, not <patch> version
+COPY kubectl-versions.txt /kubectl-versions.txt
+RUN zypper ar -f https://rpm.rancher.io/pkgs/prime pkgs && \
+    rpm --root /chroot --import https://raw.githubusercontent.com/rancher/rancher/refs/heads/main/rancher-rpm-pkgs.key && \
+    while read -r version; do \
+        zypper --installroot /chroot -n in -r pkgs kubectl-${version} && \
+        ln -sf kubectl-${version} /chroot/usr/bin/kubectl${version}; \
+    done < /kubectl-versions.txt
 
 # Disable ability to download kubectl due to air-gap support
 RUN sed -i 's/AllowDownload = true/AllowDownload = false/' /chroot/home/kuberlr/.kuberlr/kuberlr.conf
