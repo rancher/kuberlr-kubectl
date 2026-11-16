@@ -1,9 +1,15 @@
-ARG BCI_VERSION=16.0
+# syntax=docker/dockerfile:1
+ARG BCI_VERSION=16.1
+ARG USERNAME=kuberlr
+ARG UID=1000
+ARG GID=1000
 
-FROM ghcr.io/flavio/kuberlr:v0.9.0 AS kuberlr
 FROM registry.suse.com/bci/bci-busybox:${BCI_VERSION} AS final
-FROM registry.suse.com/bci/bci-base:${BCI_VERSION} AS zypper
+FROM registry.suse.com/bci/bci-base:${BCI_VERSION} AS builder
 
+ARG USERNAME
+ARG UID
+ARG GID
 ARG TARGETPLATFORM
 ARG TARGETARCH
 
@@ -18,38 +24,53 @@ COPY --from=final / /chroot/
 RUN zypper --non-interactive refresh && \
     zypper --installroot /chroot --non-interactive update && \
     zypper --installroot /chroot -n rm busybox-vi busybox-links && \
-    zypper --installroot /chroot -n in bash-completion && \
-    zypper --installroot /chroot clean -a && \
-    rm -rf /chroot/var/cache/zypp/* /chroot/var/log/zypp/* /chroot/etc/zypp/
+    zypper --installroot /chroot -n in bash bash-completion vim
 
-# Pull in kuberlr bin and home dir (pre configured .kubrlr)
-COPY --from=kuberlr /bin/kuberlr /chroot/bin/
-RUN cd /chroot/bin && ln -s ./kuberlr ./kubectl
-COPY --from=kuberlr /home/kuberlr /chroot/home/kuberlr
-
-# Packages are named kubectl-<major>.<minor>, not <patch> version
-COPY kubectl-versions.txt /kubectl-versions.txt
+# Pull in kuberlr bin and home dir
 RUN zypper ar -f https://rpm.rancher.io/pkgs/prime pkgs && \
     rpm --root /chroot --import https://raw.githubusercontent.com/rancher/rancher/refs/heads/main/rancher-rpm-pkgs.key && \
-    while read -r version; do \
+    zypper --installroot /chroot -n in -r pkgs kuberlr
+
+# The symbolic link target has no /chroot prefix - when inside container.
+RUN ln -s /usr/bin/kuberlr /chroot/usr/local/bin/kubectl
+
+# Packages are named kubectl-<major>.<minor>, excluding <patch> version
+COPY kubectl-versions.txt /kubectl-versions.txt
+RUN while read -r version; do \
         zypper --installroot /chroot -n in -r pkgs kubectl-${version} && \
         ln -sf kubectl-${version} /chroot/usr/bin/kubectl${version}; \
     done < /kubectl-versions.txt
 
-# Disable ability to download kubectl due to air-gap support
-RUN sed -i 's/AllowDownload = true/AllowDownload = false/' /chroot/home/kuberlr/.kuberlr/kuberlr.conf
+# Cleanup Zypper
+RUN zypper --installroot /chroot clean -a && \
+    rm -rf /chroot/var/cache/zypp/* /chroot/var/log/zypp/* /chroot/etc/zypp/ \
+              /chroot/usr/share/doc /chroot/usr/share/man
+
+# Setup kubrlr and kubectl configs
+COPY package/bash.bashrc /chroot/etc/bash.bashrc
+RUN chroot /chroot /usr/bin/kuberlr completion bash \
+        > /chroot/etc/kuberlr-completion.bash && \
+    chroot /chroot /usr/local/bin/kubectl completion bash \
+            > /chroot/etc/kubectl-completion.bash
 
 # Setup kuberlr user and perms
-RUN useradd -u 1000 -U kuberlr \
-    && cp /etc/passwd /chroot/etc/passwd \
-    && cp /etc/group /chroot/etc/group \
-    && chown -R 1000:1000 /chroot/home/kuberlr
+RUN groupadd -g "${GID}" "${USERNAME}" && \
+    useradd -m -u "${UID}" -g "${GID}" -s /bin/bash "${USERNAME}"
+COPY --chown=${UID}:${GID} package/kuberlr.conf /home/${USERNAME}/.kuberlr/kuberlr.conf
 
 FROM scratch
+ARG USERNAME
+ARG UID
+ARG GID
 
-COPY --from=zypper /chroot /
+COPY --from=builder /chroot /
+COPY --from=builder /etc/passwd /etc/group /etc/shadow /etc/
 
-USER kuberlr
-WORKDIR /home/kuberlr
+RUN install -d -o ${UID} -g ${GID} -m 0750 /home/${USERNAME}
+COPY --from=builder --chown=${UID}:${GID} /home/${USERNAME} /home/${USERNAME}
+
+USER ${UID}:${GID}
+WORKDIR /home/${USERNAME}
+ENV HOME=/home/${USERNAME}
 ENTRYPOINT ["/bin/kubectl"]
 CMD ["help"]
