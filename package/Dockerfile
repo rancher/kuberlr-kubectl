@@ -1,4 +1,4 @@
-ARG BCI_VERSION=16.0
+ARG BCI_VERSION=16.1
 
 FROM ghcr.io/flavio/kuberlr:v0.9.0 AS kuberlr
 FROM registry.suse.com/bci/bci-busybox:${BCI_VERSION} AS final
