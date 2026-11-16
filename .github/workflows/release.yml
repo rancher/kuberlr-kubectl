@@ -42,6 +42,29 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
+      - name: Check SemVer Characteristics
+        id: semver_check
+        uses: rancher/kuberlr-kubectl/.github/actions/check-semver@automation-core
+        with:
+          tag: ${{ github.ref_name }}
+
+      - name: Create draft GitHub release
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          HAS_PRERELEASE: ${{ steps.semver_check.outputs.HAS_PRERELEASE }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Skip creation if the release already exists (e.g. on a re-run).
+          if gh release view "${TAG_NAME}" >/dev/null 2>&1; then
+            echo "Release ${TAG_NAME} already exists; skipping creation."
+            exit 0
+          fi
+          args=(--draft --verify-tag --generate-notes --title "${TAG_NAME}")
+          if [ "${HAS_PRERELEASE}" = "true" ]; then
+            args+=(--prerelease)
+          fi
+          gh release create "${TAG_NAME}" "${args[@]}"
+
       - name : Make test helm chart
         env:
           TAG_NAME: ${{ github.ref_name }}
@@ -79,12 +102,6 @@ jobs:
           prime-repo: rancher
           prime-username: ${{ env.PRIME_STG_REGISTRY_USERNAME }}
           prime-password: ${{ env.PRIME_STG_REGISTRY_PASSWORD }}
-
-      - name: Check SemVer Characteristics
-        id: semver_check
-        uses: rancher/kuberlr-kubectl/.github/actions/check-semver@automation-core
-        with:
-          tag: ${{ github.ref_name }}
 
       - name: Load Secrets from Vault
         if: ${{ steps.semver_check.outputs.HAS_PRERELEASE == 'false' }}
