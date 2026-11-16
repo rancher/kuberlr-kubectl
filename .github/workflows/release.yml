@@ -127,6 +127,13 @@ jobs:
           prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
           prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
+      - name: Publish the GitHub release
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release edit "${TAG_NAME}" --draft=false
+
   retag:
     permissions:
       packages: write
