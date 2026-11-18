@@ -1,0 +1,26 @@
+---
+# Starts the image through its own ENTRYPOINT with only arguments, the way the system-upgrade-controller starts it for
+# its cordon and drain steps. The other workloads of this chart set their own command, so a missing entrypoint
+# binary does not stop them from running.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kuberlr-kubectl-entrypoint
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: kuberlr-kubectl-entrypoint
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: kuberlr-kubectl-entrypoint-container
+          image: {{ template "kubectl.image" . }}
+          imagePullPolicy: {{ .Values.global.kubectl.image.pullPolicy | default "Always" }}
+          args: ["version", "--client"]
+          {{- if and .Values.global.kubectl (hasKey .Values.global.kubectl "kuberlrAllowDownload") }}
+          env:
+            - name: KUBERLR_ALLOWDOWNLOAD
+              value: {{ default .Values.global.kubectl.kuberlrAllowDownload false }}
+          {{- end }}
