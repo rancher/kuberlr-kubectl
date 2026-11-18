@@ -32,7 +32,11 @@ RUN zypper ar -f https://rpm.rancher.io/pkgs/prime pkgs && \
     zypper --installroot /chroot -n in -r pkgs kuberlr
 
 # The symbolic link target has no /chroot prefix - when inside container.
-RUN ln -s /usr/bin/kuberlr /chroot/usr/local/bin/kubectl
+# The image ENTRYPOINT is /bin/kubectl and /bin is a link to /usr/bin, so kubectl has to be in /usr/bin as well:
+# a container that is started with only arguments, as the system-upgrade-controller does for its cordon and drain
+# steps, fails to start without it.
+RUN ln -s /usr/bin/kuberlr /chroot/usr/bin/kubectl && \
+    ln -s /usr/bin/kuberlr /chroot/usr/local/bin/kubectl
 
 # Packages are named kubectl-<major>.<minor>, excluding <patch> version
 COPY kubectl-versions.txt /kubectl-versions.txt
