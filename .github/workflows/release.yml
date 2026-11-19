@@ -87,7 +87,7 @@ jobs:
             secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password | PRIME_STG_REGISTRY_PASSWORD ;
 
       - name: Build and push kuberlr-kubectl image (dockerhub and prime stg)
-        uses: rancher/ecm-distro-tools/actions/publish-image@ee852bce72b895986f953b67d03430130dfae62d # v0.78.2
+        uses: rancher/ecm-distro-tools/actions/publish-image@b8127344173a5750da03068316ee40c547652c15 # v0.78.3
         with:
           image: ${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
           tag: ${{ github.ref_name }}
@@ -114,7 +114,7 @@ jobs:
 
       - name: Build and push kuberlr-kubectl image (prime prod)
         if: ${{ steps.semver_check.outputs.HAS_PRERELEASE == 'false' }}
-        uses: rancher/ecm-distro-tools/actions/publish-image@ee852bce72b895986f953b67d03430130dfae62d # v0.78.2
+        uses: rancher/ecm-distro-tools/actions/publish-image@b8127344173a5750da03068316ee40c547652c15 # v0.78.3
         with:
           image: ${{ vars.IMAGE_NAME || 'kuberlr-kubectl' }}
           tag: ${{ github.ref_name }}
