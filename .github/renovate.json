@@ -1,7 +1,5 @@
 {
-  "extends": [
-    "github>rancher/renovate-config#release"
-  ],
+  "extends": ["github>rancher/renovate-config//default#release"],
   "baseBranchPatterns": [
     "main",
     "automation-core",
@@ -14,23 +12,23 @@
   "packageRules": [
     {
       "matchBaseBranches": ["main"],
-      "extends": ["github>rancher/renovate-config:rancher-main#main"]
+      "extends": ["github>rancher/renovate-config:rancher-main#release"]
     },
     {
       "matchBaseBranches": ["release/v8.x"],
-      "extends": ["github>rancher/renovate-config:rancher-2.15#main"]
+      "extends": ["github>rancher/renovate-config:rancher-2.15#release"]
     },
     {
       "matchBaseBranches": ["release/v7.x"],
-      "extends": ["github>rancher/renovate-config:rancher-2.14#main"]
+      "extends": ["github>rancher/renovate-config:rancher-2.14#release"]
     },
     {
       "matchBaseBranches": ["release/v6.x"],
-      "extends": ["github>rancher/renovate-config:rancher-2.13#main"]
+      "extends": ["github>rancher/renovate-config:rancher-2.13#release"]
     },
     {
       "matchBaseBranches": ["release/v5.x"],
-      "extends": ["github>rancher/renovate-config:rancher-2.12#main"]
+      "extends": ["github>rancher/renovate-config:rancher-2.12#release"]
     },
     {
       "description": "Using allowedVersions ensures that the upstream range does not block patch bumps.",
